@@ -3,6 +3,7 @@ package com.stelliberty.android.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stelliberty.android.data.store.ProxyDelayStore
 import com.stelliberty.android.data.store.ProxySelectionStore
 import com.stelliberty.android.domain.model.ProxyPreview
 import com.stelliberty.android.domain.repository.MihomoRepository
@@ -72,6 +73,7 @@ data class ProxyUiState(
 
 class ProxyViewModel(
     private val proxySelections: ProxySelectionStore? = null,
+    private val proxyDelays: ProxyDelayStore? = null,
     private val getActiveUuid: () -> String? = { null },
     private val storage: PlatformStorage? = null,
     private val previewRepository: ProxyPreviewRepository? = null,
@@ -281,6 +283,8 @@ class ProxyViewModel(
         val preserved = if (preservedUuid == uuid) preservedDelays else emptyMap()
         preservedDelays = emptyMap()
         preservedUuid = null
+        // 跨进程重启：同订阅最近一次测得的延迟从 store 回填；本会话刚捕获的 preserved 优先。
+        val seed = proxyDelays?.delays(uuid).orEmpty() + preserved
         return preview.groups.map { group ->
             val saved = selections[group.name]
             val type = PREVIEW_GROUP_TYPES[group.type.lowercase()] ?: group.type
@@ -294,8 +298,8 @@ class ProxyViewModel(
                     else -> ""
                 },
                 all = group.all.toPersistentList(),
-                delays = group.all.filter { it in preserved }
-                    .associate { it to preserved[it]!! }
+                delays = group.all.filter { it in seed }
+                    .associate { it to seed[it]!! }
                     .toPersistentMap(),
                 nodeTypes = nodeTypes.toPersistentMap(),
                 icon = group.icon,
@@ -319,12 +323,14 @@ class ProxyViewModel(
             // 数千节点的延迟/类型映射在主线程要十余毫秒，正好落在切页动画期间；
             // 入参与产物都是不可变结构，搬到 Default 后只有 nodeProviderMap 要回主线程赋值。
             val mapped = withContext(Dispatchers.Default) {
-                // 内核刚启动 history 为空，把启动前预览态测到的同订阅延迟垫进去；内核测过的以 history 为准。
+                // 内核刚启动 history 为空：启动前预览态测到的延迟垫进去，再叠加跨进程重启保留的
+                // store 结果；内核测过的以 history 为准（含 timeout 的 -1，不被旧值覆盖）。
                 val preserved = if (preservedUuid == current.uuid) preservedDelays else emptyMap()
                 if (preservedUuid != current.uuid) {
                     preservedDelays = emptyMap()
                     preservedUuid = null
                 }
+                val delaySeed = current.uuid?.let { proxyDelays?.delays(it) }.orEmpty() + preserved
                 val runtimeProxies = proxiesResult.getOrNull()?.proxies ?: emptyMap()
                 val allProxies = runtimeProxies.toMutableMap()
                 val providerOf = mutableMapOf<String, String>()
@@ -375,8 +381,8 @@ class ProxyViewModel(
                                 nodeTypes[proxyName] = proxy.type
                             }
                         }
-                        // 只补 history 没有的键：内核测过的（含 timeout 的 -1）不被预览旧值覆盖。
-                        preserved.forEach { (name, delay) ->
+                        // 只补 history 没有的键：内核测过的（含 timeout 的 -1）不被旧值覆盖。
+                        delaySeed.forEach { (name, delay) ->
                             if (name in node.all && name !in delays) delays[name] = delay
                         }
                         ProxyGroupUi(
@@ -643,8 +649,16 @@ class ProxyViewModel(
         return previewRepository?.testNodeDelay(uuid, nodeName, PREVIEW_DELAY_TIMEOUT_MS) ?: -1
     }
 
+    // 延迟更新统一走这里落盘：跨进程重启后代理页从 store 回填，运行态 history 只在内核活着时可用。
+    private fun currentDelayUuid(): String? = session?.uuid ?: previewUuid
+
+    private fun persistDelay(nodeName: String, delay: Int) {
+        currentDelayUuid()?.let { uuid -> proxyDelays?.update(uuid, nodeName, delay) }
+    }
+
     // 单节点延迟回填：节点可能同时属于多个组，全部同步。
     private fun updateNodeDelayEverywhere(nodeName: String, delay: Int) {
+        persistDelay(nodeName, delay)
         _uiState.value = _uiState.value.copy(
             groups = _uiState.value.groups
                 .map { group ->
@@ -659,6 +673,7 @@ class ProxyViewModel(
     }
 
     private fun updateGroupDelay(groupName: String, nodeName: String, delay: Int) {
+        persistDelay(nodeName, delay)
         _uiState.value = _uiState.value.copy(
             groups = _uiState.value.groups
                 .map { group ->
