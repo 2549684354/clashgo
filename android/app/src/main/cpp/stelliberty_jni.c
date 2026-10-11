@@ -154,6 +154,27 @@ Java_com_stelliberty_android_data_bridge_StellibertyCoreBridge_nativeProxyPrevie
 }
 
 JNIEXPORT jstring JNICALL
+Java_com_stelliberty_android_data_bridge_StellibertyCoreBridge_nativeProxyNodeDelay(
+        JNIEnv *env, jclass clazz,
+        jstring jWorkDir, jstring jTransform, jstring jKey, jstring jNode, jint jTimeout) {
+    char *workDir = jstring_to_cstr(env, jWorkDir);
+    char *transform = jstring_to_cstr(env, jTransform);
+    char *key = jstring_to_cstr(env, jKey);
+    char *node = jstring_to_cstr(env, jNode);
+    char *result = stellibertyProxyNodeDelay(
+            workDir ? workDir : "",
+            transform ? transform : "",
+            key ? key : "",
+            node ? node : "",
+            (int) jTimeout);
+    free(workDir);
+    free(transform);
+    free(key);
+    free(node);
+    return go_cstr_to_jstring(env, result);
+}
+
+JNIEXPORT jstring JNICALL
 Java_com_stelliberty_android_data_bridge_StellibertyCoreBridge_nativeGenAgeKeyPair(
         JNIEnv *env, jclass clazz) {
     char *result = stellibertyGenAgeKeyPair();

@@ -31,7 +31,7 @@ object AppIcons {
     val Search: ImageVector get() = MingCuteSearch
     val SearchCleanup: ImageVector get() = MingCuteCloseCircle
     val Sort: ImageVector get() = MingCuteSortAscending
-    val TestDelay: ImageVector get() = MingCuteDashboard2
+    val TestDelay: ImageVector get() = MingCuteLightning
     val Unpin: ImageVector get() = MingCuteCloseCircle
     val Wifi: ImageVector get() = MingCuteWifi
 }

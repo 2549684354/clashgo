@@ -35,6 +35,30 @@ class ProxyPreviewRepositoryImpl(
         }
     }
 
+    // 每次调用现场重取变换文件：JNI 侧按 workDir + transform 读配置，测速本身远比这一读一写贵。
+    override suspend fun testNodeDelay(
+        subscriptionId: String,
+        nodeName: String,
+        timeoutMs: Int,
+    ): Int? = withContext(Dispatchers.IO) {
+        val subscription = subscriptionStore.findImported(subscriptionId) ?: return@withContext null
+        val transform = transformWriter.write(subscription, PREVIEW_TRANSFORM, rules = null)
+        try {
+            StellibertyCoreBridge.proxyNodeDelay(
+                workDir = File(fileManager.getImportedDir(subscription.id)),
+                transform = transform?.let(::File),
+                ageSecretKey = subscription.ageSecretKey,
+                nodeName = nodeName,
+                timeoutMs = timeoutMs,
+            )
+        } catch (e: Exception) {
+            AppLogger.warn(TAG, "preview node delay test failed", e)
+            null
+        } finally {
+            transform?.let { File(it).delete() }
+        }
+    }
+
     private companion object {
         const val TAG = "ProxyPreviewRepository"
         const val PREVIEW_TRANSFORM = "proxy.preview.json"

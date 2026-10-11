@@ -42,6 +42,9 @@ data class CoreFetchResult(
 @Serializable
 private data class TransformCheck(val hasCycle: Boolean = false)
 
+@Serializable
+private data class ProxyNodeDelay(val delay: Int = 0)
+
 class StellibertyCoreError(message: String) : RuntimeException(message)
 
 object StellibertyCoreBridge {
@@ -195,6 +198,26 @@ object StellibertyCoreBridge {
             ProxyPreview.serializer(),
         )
 
+    // 内核未运行时的节点测速：应用进程内组装真实出口跑内核 URLTest，与运行时 /proxies/{name}/delay 同口径。
+    // 阻塞式 JNI 调用（不响应协程取消），调用方须留在 Dispatchers.IO 并自行限并发。
+    fun proxyNodeDelay(
+        workDir: File,
+        transform: File?,
+        ageSecretKey: String,
+        nodeName: String,
+        timeoutMs: Int,
+    ): Int =
+        decodePayload(
+            nativeProxyNodeDelay(
+                workDir.path,
+                transform?.path.orEmpty(),
+                ageSecretKey,
+                nodeName,
+                timeoutMs,
+            ),
+            ProxyNodeDelay.serializer(),
+        ).delay
+
     private fun <T> decodePayload(raw: String?, serializer: KSerializer<T>): T {
         if (raw.isNullOrEmpty()) throw StellibertyCoreError("native returned empty result")
         if (raw.startsWith("error:")) throw StellibertyCoreError(raw.removePrefix("error:").trim())
@@ -213,6 +236,15 @@ object StellibertyCoreBridge {
 
     @JvmStatic
     private external fun nativeProxyPreview(workDir: String, transform: String, secretKey: String): String?
+
+    @JvmStatic
+    private external fun nativeProxyNodeDelay(
+        workDir: String,
+        transform: String,
+        secretKey: String,
+        nodeName: String,
+        timeoutMs: Int,
+    ): String?
 
     @JvmStatic
     private external fun nativeSetAgeSecretKey(key: String)
