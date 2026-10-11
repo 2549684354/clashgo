@@ -85,6 +85,7 @@ fun AboutScreen(
     onBack: () -> Unit = {},
     mihomoVersion: String = "",
     onOpenUrl: (String) -> Unit = {},
+    onNavigateMoreLicenses: () -> Unit = {},
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val lazyListState = rememberLazyListState()
@@ -152,6 +153,7 @@ fun AboutScreen(
                 scrollProgress = { scrollProgressState.value },
                 mihomoVersion = mihomoVersion,
                 onOpenUrl = onOpenUrl,
+                onNavigateMoreLicenses = onNavigateMoreLicenses,
                 appUpdateViewModel = appUpdateViewModel,
             )
         }
@@ -167,6 +169,7 @@ private fun AboutContent(
     scrollProgress: () -> Float,
     mihomoVersion: String,
     onOpenUrl: (String) -> Unit,
+    onNavigateMoreLicenses: () -> Unit,
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val density = LocalDensity.current
@@ -359,22 +362,11 @@ private fun AboutContent(
                             modifier = cardModifier,
                             colors = cardColors,
                         ) {
+                            // 主列表只放本项目与内核两个直接依赖，其余许可统一收进「更多」页。
                             val ossProjects = remember(mihomoVersion) {
                                 listOf(
                                     "Stelliberty" to "https://github.com/Kindness-Kismet/stelliberty_android",
                                     (if (mihomoVersion.isNotEmpty()) "mihomo ($mihomoVersion)" else "mihomo") to "https://github.com/MetaCubeX/mihomo",
-                                    "miuix" to "https://github.com/compose-miuix-ui/miuix",
-                                    "scripta" to "https://github.com/YuKongA/scripta",
-                                    "AndroidHiddenApiBypass" to "https://github.com/LSPosed/AndroidHiddenApiBypass",
-                                    "AndroidX" to "https://github.com/androidx/androidx",
-                                    "Koin" to "https://github.com/InsertKoinIO/koin",
-                                    "Kotlin" to "https://github.com/JetBrains/kotlin",
-                                    "kotlinx.collections.immutable" to "https://github.com/Kotlin/kotlinx.collections.immutable",
-                                    "kotlinx.coroutines" to "https://github.com/Kotlin/kotlinx.coroutines",
-                                    "kotlinx-datetime" to "https://github.com/Kotlin/kotlinx-datetime",
-                                    "kotlinx.serialization" to "https://github.com/Kotlin/kotlinx.serialization",
-                                    "Ktor" to "https://github.com/ktorio/ktor",
-                                    "quickie" to "https://github.com/G00fY2/quickie",
                                 )
                             }
                             ossProjects.forEach { (name, url) ->
@@ -384,6 +376,10 @@ private fun AboutContent(
                                     onClick = { onOpenUrl(url) },
                                 )
                             }
+                            ArrowPreference(
+                                title = stringResource(R.string.about_open_source_more),
+                                onClick = onNavigateMoreLicenses,
+                            )
                         }
 
                         Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))

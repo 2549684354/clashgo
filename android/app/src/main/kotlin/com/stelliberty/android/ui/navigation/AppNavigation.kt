@@ -86,6 +86,7 @@ import com.stelliberty.android.ui.screen.log.LogScreen
 import com.stelliberty.android.ui.screen.provider.ProviderScreen
 import com.stelliberty.android.ui.screen.proxy.ProxyScreen
 import com.stelliberty.android.ui.screen.settings.AboutScreen
+import com.stelliberty.android.ui.screen.settings.OssMoreScreen
 import com.stelliberty.android.ui.screen.settings.AgeKeyScreen
 import com.stelliberty.android.ui.screen.settings.AppBehaviorScreen
 import com.stelliberty.android.ui.screen.settings.AppProxyScreen
@@ -652,6 +653,14 @@ fun AppNavigation(
                     appUpdateViewModel = appUpdateViewModel,
                     onBack = { navigator.pop() },
                     mihomoVersion = mihomoVersion,
+                    onOpenUrl = { url -> uriHandler.openUri(url) },
+                    onNavigateMoreLicenses = { navigator.push(Route.OssLicenses) },
+                )
+            }
+            entry<Route.OssLicenses>(swipeDismiss = swipeDismiss) {
+                val uriHandler = LocalUriHandler.current
+                OssMoreScreen(
+                    onBack = { navigator.pop() },
                     onOpenUrl = { url -> uriHandler.openUri(url) },
                 )
             }
