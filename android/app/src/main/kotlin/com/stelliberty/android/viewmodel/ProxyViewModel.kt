@@ -218,8 +218,9 @@ class ProxyViewModel(
             preservedDelays = _uiState.value.groups.fold(emptyMap()) { acc, group -> acc + group.delays }
             preservedUuid = session?.uuid
         } else {
-            preservedDelays = emptyMap()
-            preservedUuid = null
+            // 启动代理：预览态测到的延迟同样带进运行态，加载后垫底，排序随之延续。
+            preservedDelays = _uiState.value.groups.fold(emptyMap()) { acc, group -> acc + group.delays }
+            preservedUuid = previewUuid
         }
         session = repo?.let {
             Session(
@@ -318,6 +319,12 @@ class ProxyViewModel(
             // 数千节点的延迟/类型映射在主线程要十余毫秒，正好落在切页动画期间；
             // 入参与产物都是不可变结构，搬到 Default 后只有 nodeProviderMap 要回主线程赋值。
             val mapped = withContext(Dispatchers.Default) {
+                // 内核刚启动 history 为空，把启动前预览态测到的同订阅延迟垫进去；内核测过的以 history 为准。
+                val preserved = if (preservedUuid == current.uuid) preservedDelays else emptyMap()
+                if (preservedUuid != current.uuid) {
+                    preservedDelays = emptyMap()
+                    preservedUuid = null
+                }
                 val runtimeProxies = proxiesResult.getOrNull()?.proxies ?: emptyMap()
                 val allProxies = runtimeProxies.toMutableMap()
                 val providerOf = mutableMapOf<String, String>()
@@ -367,6 +374,10 @@ class ProxyViewModel(
                             if (proxy != null && proxy.type.isNotEmpty()) {
                                 nodeTypes[proxyName] = proxy.type
                             }
+                        }
+                        // 只补 history 没有的键：内核测过的（含 timeout 的 -1）不被预览旧值覆盖。
+                        preserved.forEach { (name, delay) ->
+                            if (name in node.all && name !in delays) delays[name] = delay
                         }
                         ProxyGroupUi(
                             name = node.name,
