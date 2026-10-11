@@ -3,6 +3,7 @@ package com.stelliberty.android.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stelliberty.android.data.api.TcpDelayTester
 import com.stelliberty.android.data.store.ProxySelectionStore
 import com.stelliberty.android.domain.model.ProxyPreview
 import com.stelliberty.android.domain.repository.MihomoRepository
@@ -34,7 +35,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 @Immutable
@@ -129,6 +132,10 @@ class ProxyViewModel(
     private val _hideUnavailableNodes = MutableStateFlow(loadInitialHideUnavailable())
     val hideUnavailableNodes: StateFlow<Boolean> = _hideUnavailableNodes.asStateFlow()
 
+    // 节点卡片密度：0 紧凑（默认）/ 1 标准 / 2 宽松。
+    private val _cardDensity = MutableStateFlow(loadInitialCardDensity())
+    val cardDensity: StateFlow<Int> = _cardDensity.asStateFlow()
+
     private class Session(val repository: MihomoRepository, val uuid: String?, val scope: CoroutineScope) {
         var selectionsRestored = false
     }
@@ -139,6 +146,10 @@ class ProxyViewModel(
     private val stateMutex = Mutex()
 
     private var nodeProviderMap: Map<String, String> = emptyMap()
+
+    // 预览态 TCP 测延迟需要节点端点；随 mapPreview 更新，内核启动或切订阅即失效。
+    private var previewUuid: String? = null
+    private var previewEndpoints: Map<String, Pair<String, Int>> = emptyMap()
 
     fun updateSortOption(option: Int) {
         _sortOption.value = option
@@ -163,6 +174,15 @@ class ProxyViewModel(
 
     private fun loadInitialHideUnavailable(): Boolean =
         storage?.getString(StorageKeys.PROXY_HIDE_UNAVAILABLE_NODES, "false") == "true"
+
+    fun updateCardDensity(density: Int) {
+        val clamped = density.coerceIn(0, 2)
+        _cardDensity.value = clamped
+        storage?.putString(StorageKeys.PROXY_CARD_DENSITY, clamped.toString())
+    }
+
+    private fun loadInitialCardDensity(): Int =
+        storage?.getString(StorageKeys.PROXY_CARD_DENSITY, "0")?.toIntOrNull()?.coerceIn(0, 2) ?: 0
 
     fun updateShowGlobalGroup(enabled: Boolean) {
         _showGlobalGroup.value = enabled
@@ -200,6 +220,8 @@ class ProxyViewModel(
         }
         loadJob = null
         nodeProviderMap = emptyMap()
+        previewUuid = null
+        previewEndpoints = emptyMap()
         _uiState.value = ProxyUiState(isProxyRunning = repo != null)
         if (repo != null) loadProxies() else loadPreview()
     }
@@ -241,7 +263,16 @@ class ProxyViewModel(
     private fun mapPreview(uuid: String, preview: ProxyPreview): ImmutableList<ProxyGroupUi> {
         val selections = proxySelections?.selections(uuid).orEmpty()
         val nodeTypes = mutableMapOf<String, String>()
-        preview.nodes.forEach { if (it.type.isNotEmpty()) nodeTypes[it.name] = it.type }
+        val endpoints = mutableMapOf<String, Pair<String, Int>>()
+        preview.nodes.forEach {
+            if (it.type.isNotEmpty()) nodeTypes[it.name] = it.type
+            val port = it.port.toIntOrNull()
+            if (it.server.isNotEmpty() && port != null && port in 1..65535) {
+                endpoints[it.name] = it.server to port
+            }
+        }
+        previewUuid = uuid
+        previewEndpoints = endpoints
         return preview.groups.map { group ->
             val saved = selections[group.name]
             val type = PREVIEW_GROUP_TYPES[group.type.lowercase()] ?: group.type
@@ -450,7 +481,10 @@ class ProxyViewModel(
     }
 
     fun testGroupDelay(group: String) {
-        val current = session ?: return
+        val current = session ?: run {
+            testPreviewGroupDelay(group)
+            return
+        }
         if (group in _uiState.value.testingGroups) return
         val nodes = groupOf(group)?.all ?: return
         if (nodes.isEmpty()) return
@@ -460,7 +494,25 @@ class ProxyViewModel(
 
         current.scope.launch {
             try {
-                current.repository.testDelays(nodes, nodeProviderMap)
+                // 每个节点测完立即回填延迟，不等整组结束；结束时再 loadProxies 与内核历史对账。
+                val semaphore = Semaphore(DELAY_TEST_CONCURRENCY)
+                coroutineScope {
+                    nodes.forEach { name ->
+                        launch {
+                            semaphore.withPermit {
+                                val provider = nodeProviderMap[name]
+                                val result = if (provider != null) {
+                                    current.repository.getProviderProxyDelay(provider, name)
+                                } else {
+                                    current.repository.getProxyDelay(name)
+                                }
+                                if (isCurrent(current)) {
+                                    updateGroupDelay(group, name, result.getOrNull()?.delay ?: -1)
+                                }
+                            }
+                        }
+                    }
+                }
                 if (!isCurrent(current)) return@launch
                 loadProxies()
             } finally {
@@ -473,8 +525,49 @@ class ProxyViewModel(
         }
     }
 
+    // 内核未运行：对预览节点的 server:port 做 TCP 握手测延迟，结果同样逐个回填。
+    private fun testPreviewGroupDelay(group: String) {
+        if (previewRepository == null || session != null) return
+        if (group in _uiState.value.testingGroups) return
+        val nodes = groupOf(group)?.all ?: return
+        if (nodes.isEmpty()) return
+        _uiState.value = _uiState.value.copy(
+            testingGroups = (_uiState.value.testingGroups + group).toPersistentSet(),
+        )
+
+        viewModelScope.launch {
+            try {
+                val endpoints = previewEndpoints
+                val uuid = previewUuid
+                val semaphore = Semaphore(DELAY_TEST_CONCURRENCY)
+                coroutineScope {
+                    nodes.forEach { name ->
+                        launch {
+                            semaphore.withPermit {
+                                val delay = testPreviewNodeDelay(name, endpoints)
+                                // 预览只服务「无内核 + 当前订阅」，任一变化都丢弃结果。
+                                if (session == null && getActiveUuid() == uuid) {
+                                    updateGroupDelay(group, name, delay)
+                                }
+                            }
+                        }
+                    }
+                }
+            } finally {
+                if (session == null) {
+                    _uiState.value = _uiState.value.copy(
+                        testingGroups = (_uiState.value.testingGroups - group).toPersistentSet(),
+                    )
+                }
+            }
+        }
+    }
+
     fun testNodeDelay(nodeName: String) {
-        val current = session ?: return
+        val current = session ?: run {
+            testPreviewNodeDelaySingle(nodeName)
+            return
+        }
         if (nodeName in _uiState.value.testingNodes) return
         _uiState.value = _uiState.value.copy(
             testingNodes = (_uiState.value.testingNodes + nodeName).toPersistentSet(),
@@ -483,13 +576,13 @@ class ProxyViewModel(
         current.scope.launch {
             try {
                 val provider = nodeProviderMap[nodeName]
-                if (provider != null) {
+                val result = if (provider != null) {
                     current.repository.getProviderProxyDelay(provider, nodeName)
                 } else {
                     current.repository.getProxyDelay(nodeName)
                 }
                 if (!isCurrent(current)) return@launch
-                loadProxies()
+                updateNodeDelayEverywhere(nodeName, result.getOrNull()?.delay ?: -1)
             } finally {
                 if (isCurrent(current)) {
                     _uiState.value = _uiState.value.copy(
@@ -498,6 +591,67 @@ class ProxyViewModel(
                 }
             }
         }
+    }
+
+    private fun testPreviewNodeDelaySingle(nodeName: String) {
+        if (previewRepository == null || session != null) return
+        if (nodeName in _uiState.value.testingNodes) return
+        _uiState.value = _uiState.value.copy(
+            testingNodes = (_uiState.value.testingNodes + nodeName).toPersistentSet(),
+        )
+
+        viewModelScope.launch {
+            try {
+                val uuid = previewUuid
+                val delay = testPreviewNodeDelay(nodeName, previewEndpoints)
+                if (session == null && getActiveUuid() == uuid) {
+                    updateNodeDelayEverywhere(nodeName, delay)
+                }
+            } finally {
+                if (session == null) {
+                    _uiState.value = _uiState.value.copy(
+                        testingNodes = (_uiState.value.testingNodes - nodeName).toPersistentSet(),
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun testPreviewNodeDelay(
+        nodeName: String,
+        endpoints: Map<String, Pair<String, Int>>,
+    ): Int {
+        val endpoint = endpoints[nodeName] ?: return -1
+        return TcpDelayTester.test(endpoint.first, endpoint.second)
+    }
+
+    // 单节点延迟回填：节点可能同时属于多个组，全部同步。
+    private fun updateNodeDelayEverywhere(nodeName: String, delay: Int) {
+        _uiState.value = _uiState.value.copy(
+            groups = _uiState.value.groups
+                .map { group ->
+                    if (nodeName in group.all) {
+                        group.copy(delays = (group.delays + (nodeName to delay)).toPersistentMap())
+                    } else {
+                        group
+                    }
+                }
+                .toPersistentList(),
+        )
+    }
+
+    private fun updateGroupDelay(groupName: String, nodeName: String, delay: Int) {
+        _uiState.value = _uiState.value.copy(
+            groups = _uiState.value.groups
+                .map { group ->
+                    if (group.name == groupName && nodeName in group.all) {
+                        group.copy(delays = (group.delays + (nodeName to delay)).toPersistentMap())
+                    } else {
+                        group
+                    }
+                }
+                .toPersistentList(),
+        )
     }
 
     private fun groupOf(name: String): ProxyGroupUi? =
@@ -552,6 +706,7 @@ class ProxyViewModel(
         const val MODE_GLOBAL = "global"
         const val MODE_DIRECT = "direct"
         private const val TAG = "ProxyViewModel"
+        private const val DELAY_TEST_CONCURRENCY = 5
 
         // 预览拿到的是配置写法，这里补齐与运行时 /group 一致的类型名；未知类型原样展示（不可选）。
         private val PREVIEW_GROUP_TYPES = mapOf(

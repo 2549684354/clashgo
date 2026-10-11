@@ -251,12 +251,32 @@ internal fun ProxyGroupHeader(
     }
 }
 
+// 节点卡片三档密度：紧凑为历史默认，标准/宽松在此基础上放大留白与字号。
+internal enum class ProxyCardDensity(
+    val hPadding: Int,
+    val topPadding: Int,
+    val bottomPadding: Int,
+    val nameSize: Int,
+    val nameLine: Int,
+    val rowTop: Int,
+    val rowMinHeight: Int,
+    val metaSize: Int,
+    val metaLine: Int,
+    val barHeight: Int,
+    val radius: Int,
+) {
+    Compact(14, 12, 6, 14, 20, 8, 20, 11, 16, 28, 14),
+    Standard(16, 15, 8, 15, 22, 10, 24, 12, 18, 32, 14),
+    Relaxed(18, 18, 10, 16, 24, 12, 26, 13, 19, 36, 16),
+}
+
 @Composable
 internal fun ProxyNodeRow(
     row: ImmutableList<String>,
     group: ProxyGroupUi,
     singleColumnProgress: State<Float>,
     testingNodes: ImmutableSet<String>,
+    density: ProxyCardDensity,
     onTestNodeDelay: (String) -> Unit,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -273,6 +293,7 @@ internal fun ProxyNodeRow(
                     isFixed = name == group.fixed,
                     isSelectable = group.isSelectable,
                     isTesting = name in testingNodes,
+                    density = density,
                     onTestDelay = { onTestNodeDelay(name) },
                     onClick = { onSelect(name) },
                 )
@@ -308,6 +329,7 @@ private fun ProxyNodeCard(
     isFixed: Boolean,
     isSelectable: Boolean,
     isTesting: Boolean,
+    density: ProxyCardDensity,
     onTestDelay: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -315,23 +337,30 @@ private fun ProxyNodeCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .squircleSurface(MiuixTheme.colorScheme.surfaceContainer, 14.dp)
+            .squircleSurface(MiuixTheme.colorScheme.surfaceContainer, density.radius.dp)
             .selectable(selected = isSelected, enabled = isSelectable, role = Role.RadioButton, onClick = onClick)
             .testTag(TestTags.Proxy.node(name)),
     ) {
         if (isSelected) {
             Box(
-                Modifier.align(Alignment.CenterStart).width(3.dp).height(28.dp)
+                Modifier.align(Alignment.CenterStart).width(3.dp).height(density.barHeight.dp)
                     .squircleBackground(if (isFixed) StatusColors.warning else primary, 2.dp),
             )
         }
-        Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 6.dp)) {
+        Column(
+            Modifier.padding(
+                start = density.hPadding.dp,
+                end = density.hPadding.dp,
+                top = density.topPadding.dp,
+                bottom = density.bottomPadding.dp,
+            ),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = name,
                     modifier = Modifier.weight(1f),
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
+                    fontSize = density.nameSize.sp,
+                    lineHeight = density.nameLine.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MiuixTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -348,15 +377,15 @@ private fun ProxyNodeCard(
                 }
             }
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = density.rowTop.dp).heightIn(min = density.rowMinHeight.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = type,
                     modifier = Modifier.weight(1f).alignByBaseline(),
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    fontSize = 11.sp,
-                    lineHeight = 16.sp,
+                    fontSize = density.metaSize.sp,
+                    lineHeight = density.metaLine.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -385,8 +414,8 @@ private fun ProxyNodeCard(
                                 delay < 0 -> "-1"
                                 else -> FormatUtils.formatLatency(delay)
                             },
-                            fontSize = 11.sp,
-                            lineHeight = 16.sp,
+                            fontSize = density.metaSize.sp,
+                            lineHeight = density.metaLine.sp,
                             fontWeight = FontWeight.Medium,
                             color = delayColor,
                         )
