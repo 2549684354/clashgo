@@ -15,6 +15,7 @@ import com.stelliberty.android.data.repository.SubscriptionProxyResolver
 import com.stelliberty.android.data.repository.SubscriptionRepositoryImpl
 import com.stelliberty.android.data.store.OverrideProfileStore
 import com.stelliberty.android.data.store.ProfileTransformWriter
+import com.stelliberty.android.data.store.ProxyDelayStore
 import com.stelliberty.android.data.store.ProxySelectionStore
 import com.stelliberty.android.data.store.RuleOverrideStore
 import com.stelliberty.android.data.store.SubscriptionStore
@@ -42,6 +43,7 @@ val dataModule = module {
 
     single { SubscriptionStore(get(), get()) }
     single { ProxySelectionStore(get(), get()) }
+    single { ProxyDelayStore(get(), get()) }
     single { OverrideProfileStore(get(), get()) }
     single { RuleOverrideStore(get(), get()) }
     single { ProfileTransformWriter(get(), get(), get()) }
@@ -57,6 +59,7 @@ val dataModule = module {
         SubscriptionRepositoryImpl(
             store = get(),
             proxySelections = get(),
+            proxyDelays = get(),
             ruleOverrides = get(),
             storage = get(),
             scope = get(),

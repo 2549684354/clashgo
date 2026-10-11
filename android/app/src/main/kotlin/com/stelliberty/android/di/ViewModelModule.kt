@@ -44,6 +44,7 @@ val viewModelModule = module {
     single {
         ProxyViewModel(
             proxySelections = get(),
+            proxyDelays = get(),
             getActiveUuid = { get<SubscriptionRepository>().getActive()?.id },
             storage = get(),
             previewRepository = get(),

@@ -178,7 +178,7 @@
     <string name="proxy_refresh_icon">Refresh Icons</string>
     <string name="proxy_single_column">Single Column</string>
     <string name="proxy_group_tabs">Horizontal group tabs</string>
-    <string name="proxy_card_density">Node card size</string>
+    <string name="proxy_card_density">Size</string>
     <string name="proxy_card_density_compact">Compact</string>
     <string name="proxy_card_density_standard">Standard</string>
     <string name="proxy_card_density_relaxed">Relaxed</string>
@@ -621,6 +621,7 @@
 
     <string name="about_title">About</string>
     <string name="about_open_source">Open Source Licenses</string>
+    <string name="about_open_source_more">More</string>
 
     <!-- FormatUtils -->
 

@@ -1,5 +1,6 @@
 package com.stelliberty.android.data.repository
 
+import com.stelliberty.android.data.store.ProxyDelayStore
 import com.stelliberty.android.data.store.ProxySelectionStore
 import com.stelliberty.android.data.store.RuleOverrideStore
 import com.stelliberty.android.data.store.SubscriptionStore
@@ -31,6 +32,7 @@ import kotlinx.coroutines.sync.withLock
 class SubscriptionRepositoryImpl(
     private val store: SubscriptionStore,
     private val proxySelections: ProxySelectionStore,
+    private val proxyDelays: ProxyDelayStore,
     private val ruleOverrides: RuleOverrideStore,
     private val storage: PlatformStorage,
     private val scope: CoroutineScope,
@@ -233,6 +235,7 @@ class SubscriptionRepositoryImpl(
         store.removeImported(uuid)
         store.removePending(uuid)
         proxySelections.removeSubscription(uuid)
+        proxyDelays.removeSubscription(uuid)
         ruleOverrides.delete(uuid)
         if (wasActive) setActive(store.imported().firstOrNull()?.id.orEmpty())
     }
