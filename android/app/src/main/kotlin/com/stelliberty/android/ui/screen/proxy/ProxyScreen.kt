@@ -9,7 +9,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -164,37 +163,16 @@ fun ProxyScreen(
                         color = barColor,
                         scrollBehavior = scrollBehavior,
                         navigationIcon = {
-                            if (groupTabs && selectedGroup != null) {
-                                Row {
-                                    if (selectedGroup.isFixed) {
-                                        IconButton(
-                                            onClick = { viewModel?.unfixProxy(selectedGroup.name) },
-                                            modifier = Modifier.testTag(TestTags.Proxy.groupUnfix(selectedGroup.name)),
-                                        ) {
-                                            Icon(
-                                                imageVector = AppIcons.Unpin,
-                                                contentDescription = stringResource(R.string.proxy_unfix),
-                                                tint = StatusColors.warning,
-                                            )
-                                        }
-                                    }
-                                    val isTesting = selectedGroup.name in uiState.testingGroups
-                                    IconButton(
-                                        onClick = { viewModel?.testGroupDelay(selectedGroup.name) },
-                                        enabled = !isTesting,
-                                        modifier = Modifier.testTag(TestTags.Proxy.groupTest(selectedGroup.name)),
-                                    ) {
-                                        if (isTesting) {
-                                            CircularProgressIndicator(size = 20.dp, strokeWidth = 2.dp)
-                                        } else {
-                                            Icon(
-                                                imageVector = AppIcons.TestDelay,
-                                                contentDescription = stringResource(R.string.proxy_test_group_delay),
-                                                modifier = Modifier.size(24.dp),
-                                                tint = MiuixTheme.colorScheme.onSurface,
-                                            )
-                                        }
-                                    }
+                            if (groupTabs && selectedGroup?.isFixed == true) {
+                                IconButton(
+                                    onClick = { viewModel?.unfixProxy(selectedGroup.name) },
+                                    modifier = Modifier.testTag(TestTags.Proxy.groupUnfix(selectedGroup.name)),
+                                ) {
+                                    Icon(
+                                        imageVector = AppIcons.Unpin,
+                                        contentDescription = stringResource(R.string.proxy_unfix),
+                                        tint = StatusColors.warning,
+                                    )
                                 }
                             }
                         },
@@ -212,6 +190,26 @@ fun ProxyScreen(
                                     contentDescription = stringResource(R.string.proxy_search_groups),
                                     tint = MiuixTheme.colorScheme.onSurface,
                                 )
+                            }
+
+                            if (groupTabs && selectedGroup != null) {
+                                val isTesting = selectedGroup.name in uiState.testingGroups
+                                IconButton(
+                                    onClick = { viewModel?.testGroupDelay(selectedGroup.name) },
+                                    enabled = !isTesting,
+                                    modifier = Modifier.testTag(TestTags.Proxy.groupTest(selectedGroup.name)),
+                                ) {
+                                    if (isTesting) {
+                                        CircularProgressIndicator(size = 20.dp, strokeWidth = 2.dp)
+                                    } else {
+                                        Icon(
+                                            imageVector = AppIcons.TestDelay,
+                                            contentDescription = stringResource(R.string.proxy_test_group_delay),
+                                            modifier = Modifier.size(24.dp),
+                                            tint = MiuixTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                }
                             }
 
                             Box {

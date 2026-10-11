@@ -46,7 +46,7 @@ ICONS: dict[str, str] = {
     "Search": "regular/files/search.svg",
     "SearchCleanup": "regular/system/close_circle.svg",
     "Sort": "regular/editing/sort_ascending.svg",
-    "TestDelay": "regular/devices/dashboard_2.svg",
+    "TestDelay": "regular/weather/lightning.svg",
     "Unpin": "regular/system/close_circle.svg",
     "Wifi": "regular/devices/wifi.svg",
     # 四个 Tab 各一对：未选中用 regular，选中用 filled
