@@ -113,6 +113,7 @@ fun ProxyScreen(
     )
     val hideUnavailable = viewModel?.hideUnavailableNodes?.collectAsStateWithLifecycle()?.value == true
     val showGlobalGroup = viewModel?.showGlobalGroup?.collectAsStateWithLifecycle()?.value != false
+    val cardDensity = viewModel?.cardDensity?.collectAsStateWithLifecycle()?.value ?: 0
     val scrollBehavior = MiuixScrollBehavior()
     val globalModeActive = uiState.mode == ProxyViewModel.MODE_GLOBAL
     val groups = remember(uiState.groups, globalModeActive, showGlobalGroup) {
@@ -309,6 +310,14 @@ fun ProxyScreen(
                                             text = stringResource(R.string.proxy_group_tabs),
                                             selected = groupTabs, enabled = true,
                                         ) { viewModel?.updateGroupTabs(!groupTabs) })
+                                        add(MenuEntry(
+                                            text = "${stringResource(R.string.proxy_card_density)}: " +
+                                                stringResource(
+                                                    CARD_DENSITY_OPTIONS.firstOrNull { it.first == cardDensity }
+                                                        ?.second ?: R.string.proxy_card_density_compact,
+                                                ),
+                                            selected = false, enabled = true,
+                                        ) { choiceMenu = 3 })
                                         add(
                                             MenuEntry(
                                                 text = stringResource(R.string.proxy_single_column),
@@ -343,7 +352,7 @@ fun ProxyScreen(
                                     }
                                     ListPopupColumn {
                                         entries.forEachIndexed { index, entry ->
-                                            if (index == 2) {
+                                            if (index == 3) {
                                                 HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
                                             }
                                             val tag = when (index) {
@@ -378,21 +387,38 @@ fun ProxyScreen(
                                     alignment = PopupPositionProvider.Align.TopEnd,
                                     onDismissRequest = { choiceMenu = 0 },
                                 ) {
-                                    val options = if (choiceMenu == 1) MODE_OPTIONS else TUN_STACK_OPTIONS
-                                    val selected = if (choiceMenu == 1) mode else tunStack
-                                    ListPopupColumn {
-                                        options.forEachIndexed { index, option ->
-                                            DropdownImpl(
-                                                text = option.second,
-                                                optionSize = options.size,
-                                                isSelected = selected.equals(option.first, ignoreCase = true),
-                                                index = index,
-                                                onSelectedIndexChange = {
-                                                    if (choiceMenu == 1) onSwitchMode(option.first)
-                                                    else onSwitchTunStack(option.first)
-                                                    choiceMenu = 0
-                                                },
-                                            )
+                                    if (choiceMenu == 3) {
+                                        ListPopupColumn {
+                                            CARD_DENSITY_OPTIONS.forEachIndexed { index, option ->
+                                                DropdownImpl(
+                                                    text = stringResource(option.second),
+                                                    optionSize = CARD_DENSITY_OPTIONS.size,
+                                                    isSelected = cardDensity == option.first,
+                                                    index = index,
+                                                    onSelectedIndexChange = {
+                                                        viewModel?.updateCardDensity(option.first)
+                                                        choiceMenu = 0
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        val options = if (choiceMenu == 1) MODE_OPTIONS else TUN_STACK_OPTIONS
+                                        val selected = if (choiceMenu == 1) mode else tunStack
+                                        ListPopupColumn {
+                                            options.forEachIndexed { index, option ->
+                                                DropdownImpl(
+                                                    text = option.second,
+                                                    optionSize = options.size,
+                                                    isSelected = selected.equals(option.first, ignoreCase = true),
+                                                    index = index,
+                                                    onSelectedIndexChange = {
+                                                        if (choiceMenu == 1) onSwitchMode(option.first)
+                                                        else onSwitchTunStack(option.first)
+                                                        choiceMenu = 0
+                                                    },
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -573,6 +599,7 @@ fun ProxyScreen(
                                         group = group,
                                         singleColumnProgress = singleColumnProgress,
                                         testingNodes = uiState.testingNodes,
+                                        density = ProxyCardDensity.entries[cardDensity],
                                         onTestNodeDelay = { viewModel?.testNodeDelay(it) },
                                         onSelect = { viewModel?.selectProxy(group.name, it) },
                                         modifier = Modifier
@@ -598,6 +625,12 @@ private class MenuEntry(
 )
 
 private val MODE_OPTIONS = listOf("rule" to "Rule", "global" to "Global", "direct" to "Direct")
+
+private val CARD_DENSITY_OPTIONS = listOf(
+    0 to R.string.proxy_card_density_compact,
+    1 to R.string.proxy_card_density_standard,
+    2 to R.string.proxy_card_density_relaxed,
+)
 
 private val TUN_STACK_OPTIONS = listOf(
     "mixed" to "Mixed",

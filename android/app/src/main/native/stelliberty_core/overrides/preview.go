@@ -4,8 +4,10 @@ package overrides
 // provider 成员由调用方从缓存文件读出后传入——overrides 不感知磁盘布局。
 
 type PreviewNode struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Server string `json:"server"`
+	Port   string `json:"port"`
 }
 
 type PreviewGroup struct {
@@ -58,7 +60,12 @@ func ProxyPreviewOf(config []byte, providerContents map[string][]byte) (*ProxyPr
 		}
 		inlineSeen[name] = true
 		inlineNames = append(inlineNames, name)
-		result.Nodes = append(result.Nodes, PreviewNode{Name: name, Type: scalar(proxy, "type")})
+		result.Nodes = append(result.Nodes, PreviewNode{
+			Name:   name,
+			Type:   scalar(proxy, "type"),
+			Server: scalar(proxy, "server"),
+			Port:   scalar(proxy, "port"),
+		})
 	}
 	result.Nodes = append(result.Nodes, providerNodes...)
 
@@ -112,7 +119,12 @@ func previewProviderNodes(content []byte) []PreviewNode {
 		if blank(name) {
 			continue
 		}
-		nodes = append(nodes, PreviewNode{Name: name, Type: scalar(proxy, "type")})
+		nodes = append(nodes, PreviewNode{
+			Name:   name,
+			Type:   scalar(proxy, "type"),
+			Server: scalar(proxy, "server"),
+			Port:   scalar(proxy, "port"),
+		})
 	}
 	return nodes
 }

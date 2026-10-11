@@ -14,6 +14,8 @@ data class ProxyPreview(
 data class ProxyPreviewNode(
     @SerialName("name") val name: String = "",
     @SerialName("type") val type: String = "",
+    @SerialName("server") val server: String = "",
+    @SerialName("port") val port: String = "",
 )
 
 @Serializable

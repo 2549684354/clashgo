@@ -66,6 +66,8 @@ object StorageKeys {
 
     const val PROXY_HIDE_UNAVAILABLE_NODES = "proxy_hide_unavailable_nodes"
 
+    const val PROXY_CARD_DENSITY = "proxy_card_density"
+
     const val DARK_MODE = "dark_mode"
     const val THEME_PURE_BLACK = "theme_pure_black"
     const val THEME_MONET = "theme_monet"

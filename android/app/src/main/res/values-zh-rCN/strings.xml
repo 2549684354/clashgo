@@ -176,6 +176,10 @@
     <string name="proxy_refresh_icon">刷新图标</string>
     <string name="proxy_single_column">单列显示</string>
     <string name="proxy_group_tabs">横向切换代理组</string>
+    <string name="proxy_card_density">节点卡片尺寸</string>
+    <string name="proxy_card_density_compact">紧凑</string>
+    <string name="proxy_card_density_standard">标准</string>
+    <string name="proxy_card_density_relaxed">宽松</string>
     <string name="proxy_node_count">%1$d/%2$d</string>
     <string name="proxy_expand_group">展开代理组</string>
     <string name="proxy_collapse_group">收起代理组</string>
