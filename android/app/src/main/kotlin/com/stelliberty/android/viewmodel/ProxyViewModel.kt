@@ -3,7 +3,6 @@ package com.stelliberty.android.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.stelliberty.android.data.api.TcpDelayTester
 import com.stelliberty.android.data.store.ProxySelectionStore
 import com.stelliberty.android.domain.model.ProxyPreview
 import com.stelliberty.android.domain.repository.MihomoRepository
@@ -147,9 +146,12 @@ class ProxyViewModel(
 
     private var nodeProviderMap: Map<String, String> = emptyMap()
 
-    // 预览态 TCP 测延迟需要节点端点；随 mapPreview 更新，内核启动或切订阅即失效。
+    // 预览态测延迟按订阅定位配置；内核启动或切订阅即失效。
     private var previewUuid: String? = null
-    private var previewEndpoints: Map<String, Pair<String, Int>> = emptyMap()
+
+    // 停止代理瞬间把运行期测到的延迟留给预览，同订阅重载后回填，避免启动-停止循环清空已测结果。
+    private var preservedDelays: Map<String, Int> = emptyMap()
+    private var preservedUuid: String? = null
 
     fun updateSortOption(option: Int) {
         _sortOption.value = option
@@ -211,6 +213,14 @@ class ProxyViewModel(
         session?.scope?.cancel()
         previewJob?.cancel()
         previewJob = null
+        if (repo == null) {
+            // 停止代理：延迟与排序跟着延迟表走，预览重载后原样回来。
+            preservedDelays = _uiState.value.groups.fold(emptyMap()) { acc, group -> acc + group.delays }
+            preservedUuid = session?.uuid
+        } else {
+            preservedDelays = emptyMap()
+            preservedUuid = null
+        }
         session = repo?.let {
             Session(
                 it,
@@ -221,7 +231,6 @@ class ProxyViewModel(
         loadJob = null
         nodeProviderMap = emptyMap()
         previewUuid = null
-        previewEndpoints = emptyMap()
         _uiState.value = ProxyUiState(isProxyRunning = repo != null)
         if (repo != null) loadProxies() else loadPreview()
     }
@@ -263,16 +272,14 @@ class ProxyViewModel(
     private fun mapPreview(uuid: String, preview: ProxyPreview): ImmutableList<ProxyGroupUi> {
         val selections = proxySelections?.selections(uuid).orEmpty()
         val nodeTypes = mutableMapOf<String, String>()
-        val endpoints = mutableMapOf<String, Pair<String, Int>>()
         preview.nodes.forEach {
             if (it.type.isNotEmpty()) nodeTypes[it.name] = it.type
-            val port = it.port.toIntOrNull()
-            if (it.server.isNotEmpty() && port != null && port in 1..65535) {
-                endpoints[it.name] = it.server to port
-            }
         }
         previewUuid = uuid
-        previewEndpoints = endpoints
+        // 延迟只在同一订阅的预览间保留：换订阅时节点重名会串结果，直接丢弃。
+        val preserved = if (preservedUuid == uuid) preservedDelays else emptyMap()
+        preservedDelays = emptyMap()
+        preservedUuid = null
         return preview.groups.map { group ->
             val saved = selections[group.name]
             val type = PREVIEW_GROUP_TYPES[group.type.lowercase()] ?: group.type
@@ -286,6 +293,9 @@ class ProxyViewModel(
                     else -> ""
                 },
                 all = group.all.toPersistentList(),
+                delays = group.all.filter { it in preserved }
+                    .associate { it to preserved[it]!! }
+                    .toPersistentMap(),
                 nodeTypes = nodeTypes.toPersistentMap(),
                 icon = group.icon,
                 fixed = if (saved != null && type != "Selector") saved else "",
@@ -525,7 +535,7 @@ class ProxyViewModel(
         }
     }
 
-    // 内核未运行：对预览节点的 server:port 做 TCP 握手测延迟，结果同样逐个回填。
+    // 内核未运行：逐个节点做与运行时同口径的内核 URLTest，结果同样立即回填。
     private fun testPreviewGroupDelay(group: String) {
         if (previewRepository == null || session != null) return
         if (group in _uiState.value.testingGroups) return
@@ -537,14 +547,13 @@ class ProxyViewModel(
 
         viewModelScope.launch {
             try {
-                val endpoints = previewEndpoints
                 val uuid = previewUuid
                 val semaphore = Semaphore(DELAY_TEST_CONCURRENCY)
                 coroutineScope {
                     nodes.forEach { name ->
                         launch {
                             semaphore.withPermit {
-                                val delay = testPreviewNodeDelay(name, endpoints)
+                                val delay = testPreviewNodeDelay(name)
                                 // 预览只服务「无内核 + 当前订阅」，任一变化都丢弃结果。
                                 if (session == null && getActiveUuid() == uuid) {
                                     updateGroupDelay(group, name, delay)
@@ -603,7 +612,7 @@ class ProxyViewModel(
         viewModelScope.launch {
             try {
                 val uuid = previewUuid
-                val delay = testPreviewNodeDelay(nodeName, previewEndpoints)
+                val delay = testPreviewNodeDelay(nodeName)
                 if (session == null && getActiveUuid() == uuid) {
                     updateNodeDelayEverywhere(nodeName, delay)
                 }
@@ -617,12 +626,10 @@ class ProxyViewModel(
         }
     }
 
-    private suspend fun testPreviewNodeDelay(
-        nodeName: String,
-        endpoints: Map<String, Pair<String, Int>>,
-    ): Int {
-        val endpoint = endpoints[nodeName] ?: return -1
-        return TcpDelayTester.test(endpoint.first, endpoint.second)
+    // 阻塞式 JNI 调用不响应协程取消：仓库实现固定在 IO 线程，超时由内核侧的 ctx 兜底。
+    private suspend fun testPreviewNodeDelay(nodeName: String): Int {
+        val uuid = previewUuid ?: return -1
+        return previewRepository?.testNodeDelay(uuid, nodeName, PREVIEW_DELAY_TIMEOUT_MS) ?: -1
     }
 
     // 单节点延迟回填：节点可能同时属于多个组，全部同步。
@@ -707,6 +714,9 @@ class ProxyViewModel(
         const val MODE_DIRECT = "direct"
         private const val TAG = "ProxyViewModel"
         private const val DELAY_TEST_CONCURRENCY = 5
+
+        // 预览测速与运行时 REST 测速共用同一超时默认值，数值口径才可比。
+        private const val PREVIEW_DELAY_TIMEOUT_MS = 5000
 
         // 预览拿到的是配置写法，这里补齐与运行时 /group 一致的类型名；未知类型原样展示（不可选）。
         private val PREVIEW_GROUP_TYPES = mapOf(

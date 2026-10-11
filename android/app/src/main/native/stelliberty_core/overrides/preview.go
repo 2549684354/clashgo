@@ -1,5 +1,11 @@
 package overrides
 
+import (
+	"fmt"
+
+	"go.yaml.in/yaml/v3"
+)
+
 // 代理页在内核未运行时的静态预览：与链式代理页面同一条「套完覆写的配置」链路解析节点与代理组，
 // provider 成员由调用方从缓存文件读出后传入——overrides 不感知磁盘布局。
 
@@ -102,19 +108,77 @@ func ProxyPreviewOf(config []byte, providerContents map[string][]byte) (*ProxyPr
 	return result, nil
 }
 
-// provider 文件就是一份只带 proxies 段的 clash 配置，复用同一套解析与别名防护。
-func previewProviderNodes(content []byte) []PreviewNode {
-	_, root, err := parseRoot(content)
+// FindNodeMapping 按名字取节点的完整映射，供预览测速在应用进程内直接组装内核出口。
+// 查找口径与 ProxyPreviewOf 一致：inline proxies 优先，provider 成员按缓存内容兜底，同名取先见者。
+func FindNodeMapping(config []byte, name string, providerContents map[string][]byte) (map[string]any, error) {
+	_, root, err := parseRoot(config)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	budget := maxExpandedNodes
 	root, err = expand(root, &budget)
 	if err != nil {
+		return nil, err
+	}
+	if node := nodeMappingByName(mappingItems(root, "proxies"), name); node != nil {
+		return nodeMappingToMap(node)
+	}
+	for _, content := range providerContents {
+		providerNodes, err := providerProxyMappings(content)
+		if err != nil {
+			continue
+		}
+		if node := nodeMappingByName(providerNodes, name); node != nil {
+			return nodeMappingToMap(node)
+		}
+	}
+	return nil, fmt.Errorf("node %q not found", name)
+}
+
+func nodeMappingByName(mappings []*yaml.Node, name string) *yaml.Node {
+	for _, proxy := range mappings {
+		if scalar(proxy, "name") == name {
+			return proxy
+		}
+	}
+	return nil
+}
+
+// provider 文件就是一份只带 proxies 段的 clash 配置；解析失败返回错误，由调用方决定是否跳过。
+func providerProxyMappings(content []byte) ([]*yaml.Node, error) {
+	_, root, err := parseRoot(content)
+	if err != nil {
+		return nil, err
+	}
+	budget := maxExpandedNodes
+	root, err = expand(root, &budget)
+	if err != nil {
+		return nil, err
+	}
+	return mappingItems(root, "proxies"), nil
+}
+
+// yaml 节点转回通用映射，供 adapter.ParseProxy 解码；别名已在 expand 阶段展开。
+func nodeMappingToMap(node *yaml.Node) (map[string]any, error) {
+	data, err := yaml.Marshal(node)
+	if err != nil {
+		return nil, err
+	}
+	mapping := make(map[string]any)
+	if err := yaml.Unmarshal(data, &mapping); err != nil {
+		return nil, err
+	}
+	return mapping, nil
+}
+
+// provider 文件就是一份只带 proxies 段的 clash 配置，复用同一套解析与别名防护。
+func previewProviderNodes(content []byte) []PreviewNode {
+	mappings, err := providerProxyMappings(content)
+	if err != nil {
 		return nil
 	}
 	var nodes []PreviewNode
-	for _, proxy := range mappingItems(root, "proxies") {
+	for _, proxy := range mappings {
 		name := scalar(proxy, "name")
 		if blank(name) {
 			continue
