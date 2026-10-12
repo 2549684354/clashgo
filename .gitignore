@@ -47,6 +47,10 @@
 !/android/app/src/**/*.kt
 !/android/app/src/**/AndroidManifest.xml
 !/android/app/src/main/res/**/*.xml
+# 启动图标前景/背景/单色主题图标为位图资源，无法由 XML 派生，必须跟踪。
+!/android/app/src/main/res/drawable-*/ic_launcher_foreground.png
+!/android/app/src/main/res/drawable-*/ic_launcher_monochrome.png
+!/android/app/src/main/res/drawable-nodpi/ic_launcher_background.png
 !/android/app/src/main/cpp/*.c
 !/android/app/src/main/cpp/*.h
 !/android/app/src/main/cpp/CMakeLists.txt
