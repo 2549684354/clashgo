@@ -13,7 +13,7 @@
 
 ## 操作区（状态卡内）
 
-操作区并入状态卡，内容随状态切换：停止态是主色大胶囊「启动」（miuix `Button`，56dp 高、28dp 圆角，`AppIcons.Play` 图标 + 白色前景）；运行态是 `热重载 | 停止 | 重启` 三枚等宽胶囊 `TextButton`（44dp 高、22dp 圆角），各按 `StatusColors.actionButton` 的动作色做 12% 透明底 + 同色前景，`spacedBy(12.dp)` 分栏；过渡态是单枚禁用胶囊（启动中走 `warning`、停止中走 `primary`），语义仍由文字色区分。
+操作区并入状态卡，内容随状态切换：停止态是主色大胶囊「启动」（miuix `Button`，56dp 高、28dp 圆角，`AppIcons.Play` 图标 + 白色前景）；运行态是 `热重载 | 停止 | 重启` 三枚等宽胶囊 `TextButton`（52dp 高、26dp 圆角、16sp 半粗），各按 `StatusColors.actionButton` 的动作色做 18% 透明底 + 同色前景（底色要压得住卡面，12% 会显得发虚），`spacedBy(12.dp)` 分栏；过渡态是单枚禁用胶囊（启动中走 `warning`、停止中走 `primary`），语义仍由文字色区分。
 
 ## 卡内水印绘制
 

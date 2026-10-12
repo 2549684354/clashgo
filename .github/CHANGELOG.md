@@ -1,21 +1,11 @@
-- Added a proxy page preview that shows the selected subscription's nodes before the proxy starts, so you can review and adjust selections without a running core
-- Reworked node delay testing, which now measures nodes before the proxy starts, streams results as they arrive, and keeps results and the delay sort after stop, restart, and app exit
-- Moved the group delay test to the action bar
-- Added compact, standard, and relaxed node card densities, selectable from the more menu
-- Merged the home action buttons into the status card
-- Added soft card shadows on the home page
-- Improved background power usage, which now pauses automatic delay tests, core log streaming, and connection list pushes while the app is in the background
-- Improved the traffic notification and log file writes, which now skip per-second rebuilds and per-line writes while the screen is off
-- Moved most open source license links behind a More page on the About screen
+- Fixed a dependency injection error that previously caused the app to crash at startup
+- Replaced the single-column toggle on the proxy page with a display menu that offers one, two, or three node columns
+- Changed the update check and the project license entry to point to this fork
+- Added the core version to the home status card, which now shows it even before the proxy starts
 
 ---
 
-- 新增了代理页预览，代理启动前即可显示所选订阅的节点，无需运行内核就能查看和调整节点选择
-- 重做了节点延迟测试，现在代理启动前也能测延迟，结果逐个呈现，停止、重启和退出应用后不再丢失，延迟排序也一并保留
-- 将代理组的延迟测试移到了操作栏
-- 新增了紧凑、标准、宽松三档节点卡片密度，可在更多菜单中选择
-- 将首页操作按钮合并进了状态卡
-- 为首页卡片添加了柔和投影
-- 降低了后台耗电，应用退到后台时自动测延迟、内核日志流和连接列表推送会暂停
-- 改善了流量通知与日志文件写入，灭屏时不再逐秒重建通知、逐行写日志
-- 将关于页的开源许可链接大部分收进了「更多」页面
+- 修复了依赖注入注册的问题，该问题曾导致应用启动时崩溃
+- 将代理页的单列开关替换为显示菜单，现在可以在单列、双列与多列（三列）之间选择
+- 将检测更新与项目开源许可条目指向本 fork
+- 新增了首页状态卡的内核版本显示，代理启动前也会显示实际版本

@@ -295,7 +295,7 @@ private fun ActionPill(
         enabled = enabled,
         minHeight = ActionPillHeight,
         cornerRadius = ActionPillRadius,
-        textStyle = TextStyle(fontWeight = FontWeight.Medium, fontSize = 15.sp),
+        textStyle = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp),
         colors = TextButtonColors(
             color = tint.copy(alpha = PillContainerAlpha),
             disabledColor = tint.copy(alpha = PillContainerAlpha),
@@ -325,7 +325,7 @@ private const val NO_VALUE = "--"
 
 private const val ProgressTrackAlpha = 0.24f
 
-private const val PillContainerAlpha = 0.12f
+private const val PillContainerAlpha = 0.18f
 
 private const val DisabledContentAlpha = 0.5f
 
@@ -333,9 +333,9 @@ private val StartButtonHeight = 56.dp
 
 private val StartButtonRadius = 28.dp
 
-private val ActionPillHeight = 44.dp
+private val ActionPillHeight = 52.dp
 
-private val ActionPillRadius = 22.dp
+private val ActionPillRadius = 26.dp
 
 private val StatusValueStyle = TextStyle(
     fontFamily = FontFamily.SansSerif,

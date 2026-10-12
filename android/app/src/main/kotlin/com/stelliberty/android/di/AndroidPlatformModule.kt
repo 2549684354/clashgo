@@ -5,6 +5,7 @@ import com.stelliberty.android.platform.AppListProvider
 import com.stelliberty.android.platform.AppVisibilityMonitor
 import com.stelliberty.android.platform.BootStartManager
 import com.stelliberty.android.platform.PlatformStorage
+import com.stelliberty.android.platform.ProxyNodeSwitchMonitor
 import com.stelliberty.android.platform.ProxyServiceController
 import com.stelliberty.android.platform.WifiPolicyController
 import com.stelliberty.android.service.ProfileUpdateScheduler
@@ -14,6 +15,7 @@ import org.koin.dsl.module
 
 val androidPlatformModule: Module = module {
     single { AppVisibilityMonitor() }
+    single { ProxyNodeSwitchMonitor() }
     single { PlatformStorage(androidContext()) }
     single { ProxyServiceController(androidContext(), get()) }
     single { AppListProvider(androidContext()) }

@@ -13,7 +13,7 @@
 - 分组图标在图片加载成功后才显示，缺失或失败时不占位。
 - 节点行始终是顶层 lazy item，从第一帧起就占满高度，懒列表只测量可见行（从 0 插值高度会让整组被当作首屏内容一次测完）。
 - 展开用可见行的淡入与位置动画；收起直接移除节点行。组头与节点卡片各自是完整圆角。
-- 分行固定 `chunked(2)`，单列切换在行内 Layout 中插值宽度与位置；动画进度以 `State<Float>` 传入测量阶段。行参数为 `ImmutableList`。
+- 行的列数取自 `nodeColumns`（1 单列 / 2 双列 / 3 多列，更多菜单「显示」二级菜单选择，持久化在 `PROXY_NODE_COLUMNS`，旧单列开关键只作迁移读取）；分行 `chunked(nodeColumns)`，行内 Layout 等宽排布，列间 gap 10dp。行参数为 `ImmutableList`。
 - 排序、过滤、分行在构建 LazyColumn 内容前按组缓存。仅在按延迟排序或隐藏不可用节点时把延迟表纳入缓存键，普通测速回填保持默认顺序。
 - 「仅显示可用节点」只排除已测且超时的节点，未测速的保留。搜索命中组名时显示整组，否则只展示命中的节点。
 - 节点卡片首行是名称，第二行协议与延迟按基线对齐；左右留白相同，延迟靠右对齐。第二行保留最小高度，各测速状态下卡片高度一致，底部留 6.dp。延迟按钮与节点选择分别响应点击。
@@ -36,7 +36,7 @@
 
 ## 更多菜单
 
-出站模式与 TUN Stack 放在右上角「更多」菜单顶部，用分隔线与下方四个显示开关（单列 / 只看可用 / GLOBAL 组 / 刷新图标）隔开：前两项改的是选路行为。条目文案带当前值（`代理模式: Rule`）。菜单条目用 `buildList` + `forEachIndexed` 计算 `index` / `optionSize`，有条件项时（TUN Stack 在未运行或 ROOT TPROXY 下 `enabled=false`）`DropdownImpl` 的圆角分段才正确。写 override + 重启归 `HomeViewModel.switchMode` / `switchTunStack`（配置修改单点），菜单只传值与回调。
+出站模式与 TUN Stack 放在右上角「更多」菜单顶部，用分隔线与下方的显示项（显示 / 只看可用 / GLOBAL 组 / 刷新图标）隔开：前两项改的是选路行为。条目文案带当前值（`代理模式: Rule`）。菜单条目用 `buildList` + `forEachIndexed` 计算 `index` / `optionSize`，有条件项时（TUN Stack 在未运行或 ROOT TPROXY 下 `enabled=false`）`DropdownImpl` 的圆角分段才正确。写 override + 重启归 `HomeViewModel.switchMode` / `switchTunStack`（配置修改单点），菜单只传值与回调。
 
 ## 两个 mode 值
 

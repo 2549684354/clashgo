@@ -59,6 +59,9 @@ object StorageKeys {
 
     const val PROXY_NODE_SINGLE_COLUMN = "proxy_node_single_column"
 
+    // 旧单列开关的继任者：每行节点列数（1/2/3）。旧键仅作一次性迁移读取。
+    const val PROXY_NODE_COLUMNS = "proxy_node_columns"
+
     const val PROXY_GROUP_TABS = "proxy_group_tabs"
     const val PROXY_SELECTED_GROUP = "proxy_selected_group"
 

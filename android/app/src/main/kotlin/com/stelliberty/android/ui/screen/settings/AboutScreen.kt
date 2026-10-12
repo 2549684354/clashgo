@@ -365,7 +365,7 @@ private fun AboutContent(
                             // 主列表只放本项目与内核两个直接依赖，其余许可统一收进「更多」页。
                             val ossProjects = remember(mihomoVersion) {
                                 listOf(
-                                    "Stelliberty" to "https://github.com/Kindness-Kismet/stelliberty_android",
+                                    "Stelliberty" to "https://github.com/2549684354/stelliberty_android",
                                     (if (mihomoVersion.isNotEmpty()) "mihomo ($mihomoVersion)" else "mihomo") to "https://github.com/MetaCubeX/mihomo",
                                 )
                             }
