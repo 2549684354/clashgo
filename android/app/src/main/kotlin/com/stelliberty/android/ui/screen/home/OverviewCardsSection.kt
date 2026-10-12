@@ -107,7 +107,9 @@ private fun SpeedCard(
                         fontWeight = FontWeight.Medium,
                         color = MiuixTheme.colorScheme.onSurface
                     )
-                    BadgeLabel("NET", StatusColors.trafficDownload)
+                    // 概览四卡的徽标统一走中性色：卡片自身的曲线/用量条已经承担状态表达，
+                    // 徽标只负责标注类别，五颜六色反而显乱。
+                    BadgeLabel("NET", StatusColors.neutral)
                 }
                 InfoRow(stringResource(R.string.home_upload), speed.uploadSpeed, Modifier.padding(top = 8.dp))
                 InfoRow(stringResource(R.string.home_download), speed.downloadSpeed, Modifier.padding(top = 4.dp))
@@ -161,7 +163,7 @@ private fun SubscriptionCard(
                     )
                     BadgeLabel(
                         text = if (hasQuota) "${(progress * 100).roundToInt()}%" else "SUB",
-                        color = StatusColors.usage(progress),
+                        color = StatusColors.neutral,
                     )
                 }
                 InfoRow(
