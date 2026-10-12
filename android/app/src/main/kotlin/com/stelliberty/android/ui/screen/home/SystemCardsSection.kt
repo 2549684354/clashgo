@@ -76,7 +76,8 @@ fun LazyListScope.systemCardsSection(
             Card(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .cardShadow(HomeCardCornerRadius),
                 insideMargin = PaddingValues(16.dp),
             ) {
                 Row(
@@ -100,7 +101,8 @@ fun LazyListScope.systemCardsSection(
             Card(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .cardShadow(HomeCardCornerRadius),
                 insideMargin = PaddingValues(16.dp),
             ) {
                 Row(
@@ -347,7 +349,8 @@ private fun TrafficDetailPanel(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .cardShadow(12.dp),
         cornerRadius = 12.dp,
         insideMargin = PaddingValues(
             start = 12.dp,

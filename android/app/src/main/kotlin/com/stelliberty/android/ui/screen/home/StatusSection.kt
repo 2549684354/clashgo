@@ -94,6 +94,7 @@ private fun StatusContent(
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
             .padding(top = 12.dp, bottom = 6.dp)
+            .cardShadow(HomeCardCornerRadius)
             .testTag(TestTags.Home.STATUS_CARD),
         insideMargin = PaddingValues(20.dp),
     ) {

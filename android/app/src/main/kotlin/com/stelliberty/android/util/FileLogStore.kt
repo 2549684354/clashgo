@@ -1,36 +1,82 @@
 package com.stelliberty.android.util
 
+import java.io.BufferedWriter
 import java.io.File
+import java.io.FileWriter
 import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 
+// 写侧走常驻 BufferedWriter：内核 info 级日志一秒能来好几行，原先每行都 open-append-close
+// 加一次裁剪检查，代理跑一天就是几十万次开关文件的 flash I/O。现在攒够 8KB 或 3 秒才落盘
+// 一次，裁剪检查也挪到落盘时做。崩溃最多丢 3 秒日志，可接受；读侧（导出/回读）必先 flush。
 class FileLogStore(
     private val logFile: File,
     private val maxSizeBytes: Long = MAX_LOG_SIZE_BYTES,
 ) {
     private val lock = Any()
+    private var writer: BufferedWriter? = null
+    private var pendingBytes = 0
+    private var firstPendingAt = 0L
 
     fun append(line: String) = synchronized(lock) {
-        logFile.parentFile?.mkdirs()
-        logFile.appendText(line + "\n")
-        trimToMaxSize()
+        val out = ensureWriter()
+        out.write(line)
+        out.write("\n")
+        pendingBytes += line.toByteArray(StandardCharsets.UTF_8).size + 1
+        if (firstPendingAt == 0L) firstPendingAt = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        if (pendingBytes >= FLUSH_PENDING_BYTES || now - firstPendingAt >= FLUSH_INTERVAL_MS) {
+            flushLocked()
+        }
     }
 
     fun readTail(maxBytes: Long): String = synchronized(lock) {
         if (!logFile.exists()) return@synchronized ""
+        flushLocked()
         readTailBytes(maxBytes).toString(StandardCharsets.UTF_8)
     }
 
     fun readBytes(): ByteArray = synchronized(lock) {
-        if (logFile.exists()) logFile.readBytes() else ByteArray(0)
+        if (!logFile.exists()) return@synchronized ByteArray(0)
+        flushLocked()
+        logFile.readBytes()
     }
 
     fun clear() = synchronized(lock) {
+        closeWriterLocked()
         if (logFile.exists()) logFile.writeText("")
     }
 
-    private fun trimToMaxSize() {
+    private fun ensureWriter(): BufferedWriter {
+        writer?.let { return it }
+        logFile.parentFile?.mkdirs()
+        val raw = FileWriter(logFile, /* append = */ true)
+        return BufferedWriter(raw, WRITE_BUFFER_BYTES).also { writer = it }
+    }
+
+    // 调用方必须已持有 lock。
+    private fun flushLocked() {
+        val out = writer ?: return
+        runCatching { out.flush() }.onFailure {
+            AppLogger.warn("FileLogStore", "Flush log file failed", it)
+        }
+        pendingBytes = 0
+        firstPendingAt = 0
+        trimToMaxSizeLocked()
+    }
+
+    private fun closeWriterLocked() {
+        writer?.let { runCatching { it.close() }.onFailure {
+            AppLogger.warn("FileLogStore", "Close log file failed", it)
+        } }
+        writer = null
+        pendingBytes = 0
+        firstPendingAt = 0
+    }
+
+    private fun trimToMaxSizeLocked() {
         if (logFile.length() <= maxSizeBytes) return
+        closeWriterLocked()
         logFile.writeBytes(readTailBytes(maxSizeBytes / 2))
     }
 
@@ -52,5 +98,8 @@ class FileLogStore(
 
     companion object {
         const val MAX_LOG_SIZE_BYTES = 5L * 1024L * 1024L
+        private const val FLUSH_PENDING_BYTES = 8L * 1024L
+        private const val FLUSH_INTERVAL_MS = 3_000L
+        private const val WRITE_BUFFER_BYTES = 16 * 1024
     }
 }
