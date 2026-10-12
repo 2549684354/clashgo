@@ -1,6 +1,8 @@
 package com.stelliberty.android.ui.screen.subscription
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -34,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stelliberty.android.R
 import com.stelliberty.android.domain.model.Subscription
 import com.stelliberty.android.ui.component.AdaptiveTopAppBar
+import com.stelliberty.android.ui.component.ListPopupDefaults.MenuPositionProvider
 import com.stelliberty.android.ui.component.blur.BlurredBar
 import com.stelliberty.android.ui.component.blur.rememberBlurBackdrop
 import com.stelliberty.android.ui.icon.AppIcons
@@ -49,7 +53,9 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -59,13 +65,16 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import top.yukonga.miuix.kmp.window.WindowListPopup
 import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun SubscriptionScreen(
     viewModel: SubscriptionViewModel,
     bottomPadding: Dp = 0.dp,
-    onNavigateAdd: () -> Unit = {},
+    onPickFile: () -> Unit = {},
+    onNavigateUrl: () -> Unit = {},
+    onScanQr: (() -> Unit)? = null,
     onNavigateEdit: (uuid: String) -> Unit = {},
     onActiveChanged: (() -> Unit)? = null,
 ) {
@@ -98,15 +107,89 @@ fun SubscriptionScreen(
                                 )
                             }
                         }
-                        IconButton(
-                            onClick = { viewModel.clearError(); onNavigateAdd() },
-                            modifier = Modifier.testTag(TestTags.Subscription.ADD),
-                        ) {
-                            Icon(
-                                imageVector = AppIcons.Add,
-                                contentDescription = stringResource(R.string.subscription_add),
-                                tint = MiuixTheme.colorScheme.onSurface,
-                            )
+                        Box {
+                            var showAddMenu by remember { mutableStateOf(false) }
+                            IconButton(
+                                onClick = { showAddMenu = true },
+                                modifier = Modifier.testTag(TestTags.Subscription.ADD),
+                            ) {
+                                Icon(
+                                    imageVector = AppIcons.Add,
+                                    contentDescription = stringResource(R.string.subscription_add),
+                                    tint = MiuixTheme.colorScheme.onSurface,
+                                )
+                            }
+                            // 「添加配置」直接弹出二级菜单：文件 / 链接 / 扫码，不再跳中间页。
+                            WindowListPopup(
+                                show = showAddMenu,
+                                popupPositionProvider = MenuPositionProvider,
+                                alignment = PopupPositionProvider.Align.TopEnd,
+                                onDismissRequest = { showAddMenu = false },
+                            ) {
+                                ListPopupColumn {
+                                    val entries = buildList {
+                                        add(
+                                            AddMenuEntry(
+                                                title = stringResource(R.string.subscription_file),
+                                                icon = AppIcons.SubscriptionFile,
+                                                onClick = {
+                                                    viewModel.clearError()
+                                                    onPickFile()
+                                                },
+                                            ),
+                                        )
+                                        add(
+                                            AddMenuEntry(
+                                                title = stringResource(R.string.subscription_url),
+                                                icon = AppIcons.SubscriptionLink,
+                                                onClick = {
+                                                    viewModel.clearError()
+                                                    onNavigateUrl()
+                                                },
+                                            ),
+                                        )
+                                        if (onScanQr != null) {
+                                            add(
+                                                AddMenuEntry(
+                                                    title = stringResource(R.string.subscription_qr),
+                                                    icon = AppIcons.SubscriptionQr,
+                                                    onClick = {
+                                                        viewModel.clearError()
+                                                        onScanQr()
+                                                    },
+                                                ),
+                                            )
+                                        }
+                                    }
+                                    entries.forEachIndexed { index, entry ->
+                                        // DropdownImpl 不带图标位，这里用同一间距规格的自定义行：
+                                        // 20dp 图标 + 12dp 间距 + 16sp 文字，与 miuix 菜单项观感一致。
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    showAddMenu = false
+                                                    entry.onClick()
+                                                }
+                                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(
+                                                imageVector = entry.icon,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp),
+                                                tint = MiuixTheme.colorScheme.onSurface,
+                                            )
+                                            Spacer(Modifier.width(12.dp))
+                                            Text(
+                                                text = entry.title,
+                                                fontSize = 16.sp,
+                                                color = MiuixTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     },
                 )
@@ -379,3 +462,10 @@ private fun SubscriptionItem(
         }
     }
 }
+
+// 「添加配置」菜单项：图标 + 标题 + 选中后的动作，与原二级页的三类入口一一对应。
+private data class AddMenuEntry(
+    val title: String,
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+)

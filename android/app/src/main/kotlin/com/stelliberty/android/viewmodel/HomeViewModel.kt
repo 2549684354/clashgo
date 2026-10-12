@@ -663,10 +663,6 @@ class HomeViewModel(
         serviceController.stop()
     }
 
-    fun restartProxy() {
-        serviceController.restart(getActiveSubscriptionId())
-    }
-
     fun onActiveSubscriptionChanged() {
         serviceController.onActiveSubscriptionChanged()
     }

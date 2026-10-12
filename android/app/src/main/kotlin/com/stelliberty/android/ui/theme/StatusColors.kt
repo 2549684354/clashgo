@@ -47,16 +47,10 @@ object StatusColors {
         RunState.Stopped -> danger
     }
 
-    @Composable
-    @ReadOnlyComposable
-    fun actionButton(action: ActionKind): ActionPalette {
-        val isDark = LocalAppDarkMode.current
-        return when (action) {
-            ActionKind.Restart -> ActionPalette(if (isDark) Color(0xFF66BB6A) else Color(0xFF43A047))
-            ActionKind.Stop -> ActionPalette(if (isDark) Color(0xFFEF5350) else Color(0xFFE53935))
-            ActionKind.Reload -> ActionPalette(if (isDark) Color(0xFF42A5F5) else Color(0xFF1E88E5))
-        }
-    }
+    // 运行态「停止」主按钮的动作色：参考图的玫红色相，明度再提一档保持鲜亮不沉闷。
+    val stopAction: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkMode.current) Color(0xFFF07FB0) else Color(0xFFEA5A92)
 
     val trafficUpload: Color
         @Composable @ReadOnlyComposable
@@ -87,7 +81,3 @@ object StatusColors {
 }
 
 enum class RunState { Running, Pending, Stopped }
-
-enum class ActionKind { Restart, Stop, Reload }
-
-data class ActionPalette(val content: Color)

@@ -104,7 +104,6 @@ import com.stelliberty.android.ui.screen.settings.SystemIntegrationScreen
 import com.stelliberty.android.ui.screen.settings.ThemeSettingsScreen
 import com.stelliberty.android.ui.screen.settings.VpnSettingsScreen
 import com.stelliberty.android.ui.screen.settings.WifiPolicyScreen
-import com.stelliberty.android.ui.screen.subscription.SubscriptionAddScreen
 import com.stelliberty.android.ui.screen.subscription.SubscriptionAddUrlScreen
 import com.stelliberty.android.ui.screen.subscription.RuleOverrideSummary
 import com.stelliberty.android.ui.screen.subscription.SubscriptionEditScreen
@@ -298,6 +297,31 @@ fun AppNavigation(
                 cornerClipRadius = rememberNavSystemCornerRadius(),
             ),
         ) {
+            // 添加配置的三类入口：订阅页顶栏「+」菜单直接展开，不再经过中间页；
+            // 动作定义在此处供订阅页调用点复用。
+            val pickSubscriptionFile: () -> Unit = {
+                filePicker?.pickYamlFile { result ->
+                    if (result != null && subscriptionViewModel != null) {
+                        subscriptionViewModel.addFromFile(
+                            fileName = result.fileName,
+                            content = result.content,
+                            onComplete = {
+                                navigator.popUntil { key -> key is Route.Main }
+                            },
+                        )
+                    }
+                }
+            }
+            val navigateSubscriptionUrl = { navigator.push(Route.SubscriptionAddUrl()) }
+            val scanSubscriptionQr: (() -> Unit)? = onScanQR?.let { scan ->
+                {
+                    scan { url ->
+                        if (url != null) {
+                            navigator.push(Route.SubscriptionAddUrl(initialUrl = url))
+                        }
+                    }
+                }
+            }
             entry<Route.Main>(swipeDismiss = swipeDismiss) {
                 MainPage(
                     homeViewModel,
@@ -310,35 +334,9 @@ fun AppNavigation(
                     storage,
                     onHideTaskCardChange,
                     hasRootPermission,
-                )
-            }
-            entry<Route.SubscriptionAdd>(swipeDismiss = swipeDismiss) {
-                SubscriptionAddScreen(
-                    viewModel = subscriptionViewModel,
-                    onBack = { navigator.pop() },
-                    onPickFile = {
-                        filePicker?.pickYamlFile { result ->
-                            if (result != null && subscriptionViewModel != null) {
-                                subscriptionViewModel.addFromFile(
-                                    fileName = result.fileName,
-                                    content = result.content,
-                                    onComplete = {
-                                        navigator.popUntil { key -> key is Route.Main }
-                                    },
-                                )
-                            }
-                        }
-                    },
-                    onNavigateUrl = { navigator.push(Route.SubscriptionAddUrl()) },
-                    onScanQR = if (onScanQR != null) {
-                        {
-                            onScanQR { url ->
-                                if (url != null) {
-                                    navigator.push(Route.SubscriptionAddUrl(initialUrl = url))
-                                }
-                            }
-                        }
-                    } else null,
+                    onPickSubscriptionFile = pickSubscriptionFile,
+                    onNavigateSubscriptionUrl = navigateSubscriptionUrl,
+                    onScanSubscriptionQr = scanSubscriptionQr,
                 )
             }
             entry<Route.SubscriptionAddUrl>(swipeDismiss = swipeDismiss) { route ->
@@ -683,6 +681,9 @@ private fun MainPage(
     storage: PlatformStorage? = null,
     onHideTaskCardChange: ((Boolean) -> Unit)? = null,
     hasRootPermission: Boolean = false,
+    onPickSubscriptionFile: () -> Unit = {},
+    onNavigateSubscriptionUrl: () -> Unit = {},
+    onScanSubscriptionQr: (() -> Unit)? = null,
 ) {
     val homeUiState = homeViewModel?.uiState?.collectAsStateWithLifecycle()?.value ?: HomeUiState()
     val selectedPage = mainPagerState.selectedPage
@@ -709,7 +710,6 @@ private fun MainPage(
                         bottomPadding = bottomPadding,
                         uiState = homeUiState,
                         viewModel = homeViewModel,
-                        onRestart = { homeViewModel?.restartProxy() },
                         onStop = { homeViewModel?.stopProxy() },
                         onReload = { homeViewModel?.reloadConfig() },
                         onTestLatency = { homeViewModel?.testLatency() },
@@ -734,7 +734,9 @@ private fun MainPage(
                         SubscriptionScreen(
                             viewModel = it,
                             bottomPadding = bottomPadding,
-                            onNavigateAdd = { navigator.push(Route.SubscriptionAdd) },
+                            onPickFile = onPickSubscriptionFile,
+                            onNavigateUrl = onNavigateSubscriptionUrl,
+                            onScanQr = onScanSubscriptionQr,
                             onNavigateEdit = { uuid -> navigator.push(Route.SubscriptionEdit(uuid)) },
                             onActiveChanged = { homeViewModel?.onActiveSubscriptionChanged() },
                         )

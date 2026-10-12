@@ -45,7 +45,6 @@ fun HomeScreen(
     bottomPadding: Dp = 0.dp,
     uiState: HomeUiState = HomeUiState(),
     viewModel: HomeViewModel? = null,
-    onRestart: () -> Unit = {},
     onStop: () -> Unit = {},
     onReload: () -> Unit = {},
     onTestLatency: () -> Unit = {},
@@ -128,9 +127,7 @@ fun HomeScreen(
                 statusSection(
                     state = uiState,
                     uptime = uptime,
-                    onReload = onReload,
                     onStop = onStop,
-                    onRestart = onRestart,
                     onStart = onStartProxy,
                 )
                 overviewCardsSection(
@@ -154,6 +151,8 @@ fun HomeScreen(
                     onNavigateProvider = onNavigateProvider,
                     onNavigateConnection = onNavigateConnection,
                     onNavigateDnsQuery = onNavigateDnsQuery,
+                    // 停止态点热重载没有意义，也不该顺手把代理拉起来，只在运行时生效。
+                    onReload = { if (uiState.isRunning) onReload() },
                 )
             }
         }

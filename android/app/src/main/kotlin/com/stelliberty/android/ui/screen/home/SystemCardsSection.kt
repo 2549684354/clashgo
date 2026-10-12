@@ -167,10 +167,14 @@ private fun ipCategory(ip: String): IpCategory {
 
 // ISO 3166-1 两位国家/地区码转 Unicode 区域指示符（国旗 emoji）；
 // 转不了的非标准码（如 T1）原样显示，别把信息吞掉。
+// 区域指示符落在基本多文种平面之外，Kotlin 的 Char 只有 16 位，
+// 直接 Char(code) 会抛 IllegalArgumentException，必须经 toChars 生成代理对。
 private fun regionFlag(code: String): String {
     val upper = code.trim().uppercase()
     if (upper.length != 2 || upper.any { it !in 'A'..'Z' }) return upper
-    return String(upper.map { Char(0x1F1E6 + (it - 'A')) }.toCharArray())
+    return buildString {
+        upper.forEach { append(Character.toChars(0x1F1E6 + (it - 'A'))) }
+    }
 }
 
 @Composable
