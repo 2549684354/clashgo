@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,13 +81,11 @@ fun LazyListScope.systemCardsSection(
                     .cardShadow(HomeCardCornerRadius),
                 insideMargin = PaddingValues(16.dp),
             ) {
-                // 运行时展示代理出口 IP（随延迟测试一并经 mixed port 实测刷新），
-                // 停止后没有出口可言，回落到设备本机 IP。出口拿不到时如实显示横线。
-                val address = when {
-                    state.isRunning && state.exitIp.isNotEmpty() -> state.exitIp
-                    state.isRunning -> "--"
-                    else -> systemInfo.localIp
-                }
+                // 卡片结构在启动前后保持一致（地址 + 节点区域），只有取值随状态变：
+                // 运行时是代理出口（出口拿不到时如实显示横线），停止后回落到设备本机 IP，
+                // 区域随之没有意义。
+                val address = if (state.isRunning) state.exitIp.ifEmpty { "--" } else systemInfo.localIp
+                val region = if (state.isRunning) regionFlag(state.exitRegion) else "--"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -100,19 +97,10 @@ fun LazyListScope.systemCardsSection(
                         fontWeight = FontWeight.Medium,
                         color = MiuixTheme.colorScheme.onSurface,
                     )
-                    val category = ipCategory(address)
-                    BadgeLabel(category.label, category.color())
+                    BadgeLabel(ipCategory(address).label, StatusColors.neutral)
                 }
                 InfoRow(stringResource(R.string.home_address), address, Modifier.padding(top = 8.dp))
-                if (state.isRunning) {
-                    InfoRow(
-                        stringResource(R.string.home_node_region),
-                        state.exitRegion.ifEmpty { "--" },
-                        Modifier.padding(top = 4.dp),
-                    )
-                } else {
-                    InfoRow(stringResource(R.string.home_interface), systemInfo.interfaceName, Modifier.padding(top = 4.dp))
-                }
+                InfoRow(stringResource(R.string.home_node_region), region, Modifier.padding(top = 4.dp))
             }
 
             Card(
@@ -177,12 +165,12 @@ private fun ipCategory(ip: String): IpCategory {
     }
 }
 
-@Composable
-@ReadOnlyComposable
-private fun IpCategory.color(): Color = when (this) {
-    IpCategory.Tun -> StatusColors.healthy
-    IpCategory.Lan, IpCategory.None -> StatusColors.neutral
-    IpCategory.Wan -> StatusColors.trafficDownload
+// ISO 3166-1 两位国家/地区码转 Unicode 区域指示符（国旗 emoji）；
+// 转不了的非标准码（如 T1）原样显示，别把信息吞掉。
+private fun regionFlag(code: String): String {
+    val upper = code.trim().uppercase()
+    if (upper.length != 2 || upper.any { it !in 'A'..'Z' }) return upper
+    return String(upper.map { Char(0x1F1E6 + (it - 'A')) }.toCharArray())
 }
 
 @Composable
