@@ -3,6 +3,7 @@ package com.stelliberty.android.viewmodel
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stelliberty.android.BuildConfig
 import com.stelliberty.android.data.api.MihomoConnectionManager
 import com.stelliberty.android.data.api.RuleLatencyTester
 import com.stelliberty.android.data.repository.OverrideJsonStore
@@ -132,7 +133,9 @@ class HomeViewModel(
     private val onLiveProviderInfo: (subscriptionId: String?, info: SubscriptionInfo?) -> Unit = { _, _ -> },
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeUiState(mode = persistedMode()))
+    // 内核版本在构建期与 libmihomo 一同注入（ldflags 同源），启动前就有值；
+    // 内核起来后 /version 的返回会再回填一次，两处一致。
+    private val _uiState = MutableStateFlow(HomeUiState(mode = persistedMode(), version = BuildConfig.MIHOMO_VERSION))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val _speedState = MutableStateFlow(SpeedSnapshot())

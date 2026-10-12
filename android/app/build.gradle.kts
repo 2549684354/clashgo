@@ -87,6 +87,9 @@ android {
         targetSdk = ProjectConfig.Android.TARGET_SDK
         versionName = appVersionName
         versionCode = appVersionCode
+        // 与 GoBuildTask 的 ldflags 注入同源：libmihomo 里 constant.Version 就是这个值，
+        // 首页在内核未启动时也用它显示实际内核版本。
+        buildConfigField("String", "MIHOMO_VERSION", "\"$mihomoVersion\"")
     }
     androidResources {
         // 应用只翻译了这三种，依赖库带来的其他语言只会让界面混杂。
