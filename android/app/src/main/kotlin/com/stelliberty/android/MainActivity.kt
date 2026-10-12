@@ -21,7 +21,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.stelliberty.android.data.api.MihomoConnectionManager
@@ -83,7 +82,6 @@ class MainActivity : ComponentActivity() {
     private var qrResultCallback: ((String?) -> Unit)? = null
     private var wifiPermissionCallback: ((Boolean) -> Unit)? = null
     private var latestThemeConfig: ThemeConfig? = null
-    private var contentReady = false
 
     private val pendingDeepLinkImport = mutableStateOf<DeepLinkImportRequest?>(null)
     private var consumedDeepLinkNonce: String? = null
@@ -98,16 +96,17 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        splashScreen.setKeepOnScreenCondition { !contentReady }
 
         consumedDeepLinkNonce = savedInstanceState?.getString(STATE_DEEPLINK_NONCE)
         acceptDeepLinkImport(intent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+            // 首帧之后再请求通知权限：onCreate 里同步发起会拖慢启动渲染。
+            window.decorView.post {
+                if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+                }
             }
         }
 
@@ -269,7 +268,6 @@ class MainActivity : ComponentActivity() {
                 appUpdateViewModel = get(),
                 onRestartApp = { restartApplication() },
             )
-            SideEffect { contentReady = true }
         }
     }
 

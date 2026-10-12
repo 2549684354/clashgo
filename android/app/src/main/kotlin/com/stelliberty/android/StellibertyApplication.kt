@@ -50,7 +50,8 @@ class StellibertyApplication : Application() {
             TunMode.fromStorage(storage.getString(StorageKeys.TUN_MODE, TunMode.Vpn.storageValue))
         )
         initToastPlatform(this)
-        NotificationHelper.createChannels(this)
+        // 渠道创建是纯 binder 调用，与启动渲染无关，丢后台避免占主线程。
+        thread(name = "notification-channels") { NotificationHelper.createChannels(this) }
         StellibertyCoreBridge.init(homeDir = ProfileFileOps.getGeodataDir(this).absolutePath)
         // 解压不能堵住启动；读地理数据的地方各自等 awaitGeodata()。
         thread(name = "geodata-extract") { ProfileFileOps.extractGeodata(this) }
