@@ -140,6 +140,7 @@
     <string name="home_tools">Tools</string>
     <string name="home_address">Address</string>
     <string name="home_interface">Interface</string>
+    <string name="home_node_region">Node region</string>
     <string name="home_speed">Speed</string>
     <string name="home_upload">Upload</string>
     <string name="home_download">Download</string>

@@ -39,6 +39,7 @@ import com.stelliberty.android.ui.util.sheetContentSafePadding
 import com.stelliberty.android.ui.util.sheetHeightTransition
 import com.stelliberty.android.util.FormatUtils
 import com.stelliberty.android.util.formatIsoTimeRelative
+import com.stelliberty.android.viewmodel.HomeUiState
 import com.stelliberty.android.viewmodel.MemorySnapshot
 import com.stelliberty.android.viewmodel.ProviderTrafficInfo
 import com.stelliberty.android.viewmodel.SystemInfoSnapshot
@@ -63,6 +64,7 @@ import top.yukonga.miuix.kmp.window.WindowBottomSheet
 fun LazyListScope.systemCardsSection(
     memory: MemorySnapshot = MemorySnapshot(),
     systemInfo: SystemInfoSnapshot = SystemInfoSnapshot(),
+    state: HomeUiState = HomeUiState(),
 ) {
     item(key = "system_cards") {
         Row(
@@ -80,6 +82,13 @@ fun LazyListScope.systemCardsSection(
                     .cardShadow(HomeCardCornerRadius),
                 insideMargin = PaddingValues(16.dp),
             ) {
+                // 运行时展示代理出口 IP（随延迟测试一并经 mixed port 实测刷新），
+                // 停止后没有出口可言，回落到设备本机 IP。出口拿不到时如实显示横线。
+                val address = when {
+                    state.isRunning && state.exitIp.isNotEmpty() -> state.exitIp
+                    state.isRunning -> "--"
+                    else -> systemInfo.localIp
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -91,11 +100,19 @@ fun LazyListScope.systemCardsSection(
                         fontWeight = FontWeight.Medium,
                         color = MiuixTheme.colorScheme.onSurface,
                     )
-                    val category = ipCategory(systemInfo.localIp)
+                    val category = ipCategory(address)
                     BadgeLabel(category.label, category.color())
                 }
-                InfoRow(stringResource(R.string.home_address), systemInfo.localIp, Modifier.padding(top = 8.dp))
-                InfoRow(stringResource(R.string.home_interface), systemInfo.interfaceName, Modifier.padding(top = 4.dp))
+                InfoRow(stringResource(R.string.home_address), address, Modifier.padding(top = 8.dp))
+                if (state.isRunning) {
+                    InfoRow(
+                        stringResource(R.string.home_node_region),
+                        state.exitRegion.ifEmpty { "--" },
+                        Modifier.padding(top = 4.dp),
+                    )
+                } else {
+                    InfoRow(stringResource(R.string.home_interface), systemInfo.interfaceName, Modifier.padding(top = 4.dp))
+                }
             }
 
             Card(

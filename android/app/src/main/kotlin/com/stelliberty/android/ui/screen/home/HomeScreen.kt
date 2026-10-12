@@ -145,6 +145,7 @@ fun HomeScreen(
                 systemCardsSection(
                     memory = memory,
                     systemInfo = systemInfo,
+                    state = uiState,
                 )
                 latencySection(uiState, onTestLatency)
                 quickEntriesSection(
