@@ -43,11 +43,11 @@ Use Android VPN without root, or choose ROOT TUN and ROOT TPROXY for privileged 
 
 <sub>[↑ Back to Navigation](#navigation)</sub>
 
-Download an APK from the [Releases page](https://github.com/Kindness-Kismet/stelliberty_android/releases).
+Download an APK from the [Releases page](https://github.com/2549684354/stelliberty_android/releases).
 
 | Channel | Where to find it | Intended use |
 |---|---|---|
-| Stable | [Latest stable release](https://github.com/Kindness-Kismet/stelliberty_android/releases/latest) | Regular use |
+| Stable | [Latest stable release](https://github.com/2549684354/stelliberty_android/releases/latest) | Regular use |
 | Beta | Releases marked **Pre-release**, with a `-betaN` version | Try upcoming changes |
 
 Android 12 or later is required. Choose `arm64-v8a` for current phones or `x86_64` for devices and emulators with that architecture.
@@ -158,7 +158,7 @@ Screens receive dependencies through parameters. ViewModels depend on repository
 ### Build and Verify
 
 ```bash
-git clone --recurse-submodules https://github.com/Kindness-Kismet/stelliberty_android.git
+git clone --recurse-submodules https://github.com/2549684354/stelliberty_android.git
 cd stelliberty_android
 python scripts/prebuild.py
 python scripts/build.py --dev
@@ -232,6 +232,8 @@ Submit changes to `beta`. Promote reviewed changes from `beta` to `main` for a s
 <sub>[↑ Back to Navigation](#navigation)</sub>
 
 This project is licensed under [GPL-3.0](LICENSE). Third-party projects retain their own licenses.
+
+This project is a fork of [Kindness-Kismet/stelliberty_android](https://github.com/Kindness-Kismet/stelliberty_android); original copyright remains with its authors.
 
 - [Mishka](https://github.com/YuKongA/Mishka) — direct upstream
 - [mihomo](https://github.com/MetaCubeX/mihomo) — proxy core; integrated through the [mihomo submodule](https://github.com/YuKongA/mihomo)

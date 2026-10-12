@@ -43,11 +43,11 @@ Stelliberty 是基于 [Mishka](https://github.com/YuKongA/Mishka) 的安卓代�
 
 <sub>[↑ 回到导航](#导航)</sub>
 
-从 [发布页面](https://github.com/Kindness-Kismet/stelliberty_android/releases) 下载 APK。
+从 [发布页面](https://github.com/2549684354/stelliberty_android/releases) 下载 APK。
 
 | 渠道 | 下载位置 | 适用场景 |
 |---|---|---|
-| 稳定版 | [最新稳定版](https://github.com/Kindness-Kismet/stelliberty_android/releases/latest) | 日常使用 |
+| 稳定版 | [最新稳定版](https://github.com/2549684354/stelliberty_android/releases/latest) | 日常使用 |
 | 开发版 | 发布页面中标记为预发布、版本带 `-betaN` 的条目 | 提前体验开发中的改动 |
 
 系统要求为 Android 12 及以上。新手机选择 `arm64-v8a`；`x86_64` 安装包用于对应架构的设备和模拟器。
@@ -158,7 +158,7 @@ scripts/                                        预构建与编译入口
 ### 编译与验证
 
 ```bash
-git clone --recurse-submodules https://github.com/Kindness-Kismet/stelliberty_android.git
+git clone --recurse-submodules https://github.com/2549684354/stelliberty_android.git
 cd stelliberty_android
 python scripts/prebuild.py
 python scripts/build.py --dev
@@ -232,6 +232,8 @@ python scripts/build.py --dev
 <sub>[↑ 回到导航](#导航)</sub>
 
 本项目使用 [GPL-3.0](../../LICENSE) 许可证，第三方项目继续遵循各自的许可证。
+
+本项目 fork 自 [Kindness-Kismet/stelliberty_android](https://github.com/Kindness-Kismet/stelliberty_android)，原始版权归其作者所有。
 
 - [Mishka](https://github.com/YuKongA/Mishka) —— 直接上游
 - [mihomo](https://github.com/MetaCubeX/mihomo) —— 代理内核，通过 [mihomo 子模块](https://github.com/YuKongA/mihomo)集成
