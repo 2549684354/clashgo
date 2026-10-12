@@ -17,6 +17,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.stelliberty.android.R
 import com.stelliberty.android.ui.component.AdaptiveTopAppBar
@@ -53,6 +56,21 @@ fun HomeScreen(
     onStartProxy: () -> Unit = {},
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+
+    // 主页面常驻组合（Pager 四页都保留），ViewModel 感知不到首页是否真的可见。
+    // 这里把分页包装出的生命周期转成可见性信号，离屏或退到后台时数据收集随之暂停。
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> viewModel?.setHomeVisible(true)
+                Lifecycle.Event.ON_STOP -> viewModel?.setHomeVisible(false)
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val speed by (viewModel?.speedState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(SpeedSnapshot()) })
     val memory by (viewModel?.memoryState?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(MemorySnapshot()) })
@@ -110,15 +128,10 @@ fun HomeScreen(
                 statusSection(
                     state = uiState,
                     uptime = uptime,
-                )
-                actionButtonsSection(
-                    onRestart = onRestart,
-                    onStop = onStop,
                     onReload = onReload,
+                    onStop = onStop,
+                    onRestart = onRestart,
                     onStart = onStartProxy,
-                    isRunning = uiState.isRunning,
-                    isStarting = uiState.isStarting,
-                    isStopping = uiState.isStopping,
                 )
                 overviewCardsSection(
                     speed = speed,

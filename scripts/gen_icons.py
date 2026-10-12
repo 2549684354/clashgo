@@ -58,6 +58,7 @@ ICONS: dict[str, str] = {
     "NavSubscriptionActive": "filled/weather/moon_cloudy.svg",
     "NavSettings": "regular/system/settings_3.svg",
     "NavSettingsActive": "filled/system/settings_3.svg",
+    "Play": "regular/media/play_circle.svg",
 }
 
 

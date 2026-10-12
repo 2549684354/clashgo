@@ -171,7 +171,11 @@ class HomeViewModel(
     private var mihomoPid: Int = -1
     private val systemInfo = PlatformSystemInfo()
 
+    // 可见性是两个信号的与：Activity 前后台 + 首页分页是否真的可见（主页面常驻组合，
+    // Pager 包装的生命周期才反映分页离屏）。任一为假都按不可见处理。
     private val uiVisible = MutableStateFlow(true)
+    private val foregroundVisible = MutableStateFlow(true)
+    private val homeVisible = MutableStateFlow(true)
 
     private var lastErrorToast: String? = null
 
@@ -438,8 +442,8 @@ class HomeViewModel(
 
     private fun startTrafficCollection() {
         trafficJob?.cancel()
-        primeTrafficHistory()
-        trafficJob = viewModelScope.launch {
+        trafficJob = collectWhileVisible {
+            primeTrafficHistory()
             repository?.trafficFlow()
                 ?.collect { traffic ->
                     upHistory.addLast(traffic.up)
@@ -525,7 +529,7 @@ class HomeViewModel(
 
     private fun startMemoryCollection() {
         memoryJob?.cancel()
-        memoryJob = viewModelScope.launch {
+        memoryJob = collectWhileVisible {
             repository?.memoryFlow()
                 ?.collect { memory ->
                     _memoryState.value = MemorySnapshot(
@@ -536,8 +540,8 @@ class HomeViewModel(
         }
     }
 
-    // 这些轮询挂在 ViewModel 的作用域上，不感知界面前后台。不按可见性掐掉，
-    // 就是在后台每天几万次读系统文件和打本地请求。
+    // 这些轮询挂在 ViewModel 的作用域上，不感知界面是否可见。不按可见性掐掉，
+    // 就是在后台或别的分页上每天几万次读系统文件和打本地请求。
     private fun pollWhileVisible(interval: Duration, block: suspend () -> Unit): Job =
         viewModelScope.launch {
             while (true) {
@@ -547,8 +551,29 @@ class HomeViewModel(
             }
         }
 
-    fun setUiVisible(visible: Boolean) {
-        uiVisible.value = visible
+    fun setForegroundVisible(visible: Boolean) {
+        foregroundVisible.value = visible
+        updateUiVisible()
+    }
+
+    fun setHomeVisible(visible: Boolean) {
+        homeVisible.value = visible
+        updateUiVisible()
+    }
+
+    private fun updateUiVisible() {
+        uiVisible.value = foregroundVisible.value && homeVisible.value
+    }
+
+    // 与 pollWhileVisible 同一可见性契约，但用于不会自己结束的推送流：隐藏时取消收集协程，
+    // WS 通道随之断开，不再有每秒一帧的推送唤醒；回前台重新订阅，流量窗口重新补零。
+    private fun collectWhileVisible(block: suspend () -> Unit): Job = viewModelScope.launch {
+        while (true) {
+            uiVisible.first { it }
+            val inner = launch { block() }
+            uiVisible.first { !it }
+            inner.cancel()
+        }
     }
 
     private fun startUptimeCounter() {
