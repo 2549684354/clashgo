@@ -31,10 +31,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -59,6 +61,8 @@ data class HomeUiState(
     val latencyGoogle: Int = -1,
     val isTestingLatency: Boolean = false,
     val latencyViaRules: Boolean = true,
+    val exitIp: String = "",
+    val exitRegion: String = "",
     val version: String = "",
     val profileName: String = "",
     val errorMessage: String = "",
@@ -128,6 +132,7 @@ class HomeViewModel(
     private val connectionManager: MihomoConnectionManager,
     private val latencyTester: RuleLatencyTester,
     private val appVisible: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow(),
+    private val nodeSwitches: Flow<Unit> = emptyFlow(),
     private val getActiveSubscriptionId: () -> String? = { null },
     private val activeSubscription: StateFlow<Subscription?> = MutableStateFlow(null).asStateFlow(),
     private val onLiveProviderInfo: (subscriptionId: String?, info: SubscriptionInfo?) -> Unit = { _, _ -> },
@@ -162,6 +167,7 @@ class HomeViewModel(
 
     private var repository: MihomoRepository? = null
     private var latencyJob: Job? = null
+    private var latencyGeneration = 0
     private var connectionRateJob: Job? = null
     private var trafficJob: Job? = null
     private var memoryJob: Job? = null
@@ -260,6 +266,12 @@ class HomeViewModel(
                 if (repository != null && getActiveSubscriptionId() != repositorySubscriptionId) {
                     clearProviderTraffic()
                 }
+            }
+        }
+        // 节点切换后实际出口变了，重测一次站点访问延迟；仅此与内核连接（启动/重启）两处自动触发。
+        viewModelScope.launch {
+            nodeSwitches.collect {
+                if (_uiState.value.isRunning) testLatency(force = true)
             }
         }
     }
@@ -678,35 +690,75 @@ class HomeViewModel(
         serviceController.restart(getActiveSubscriptionId())
     }
 
-    fun testLatency() {
-        if (latencyJob?.isActive == true) return
+    // 延迟 = 经内核 mixed port 真实访问站点的耗时，只反映「现在走的这个出口」。
+    // 自动触发仅两处：内核连接建立（启动/重启）与节点切换（nodeSwitches 信号），
+    // 其余一律等用户手动点刷新；force 用来打断进行中的一轮测试立即重测。
+    fun testLatency(force: Boolean = false) {
+        if (latencyJob?.isActive == true) {
+            if (!force) return
+            latencyJob?.cancel()
+        }
         if (repository == null) return
+        // 完成回调按代次对账：force 打断旧测试时，旧任务的 finally 不得清掉新一轮的测试态。
+        val generation = ++latencyGeneration
         _uiState.value = _uiState.value.copy(isTestingLatency = true)
 
         latencyJob = viewModelScope.launch {
             try {
+                // 内核刚起来时端口解析可能还没就绪，短暂等待补一次，避免启动首测整轮落空。
+                var endpoint = resolveProxyEndpoint()
+                if (endpoint == null) {
+                    delay(ENDPOINT_RETRY_DELAY)
+                    endpoint = resolveProxyEndpoint()
+                }
+                if (endpoint == null) {
+                    _uiState.value = _uiState.value.copy(latencyViaRules = false)
+                    return@launch
+                }
                 val viaRules = LatencyProbe.entries.map { probe ->
                     async {
-                        val delay = latencyTester.measure(probe.url, LATENCY_TIMEOUT_MILLIS)
-                        if (delay == RuleLatencyTester.Unavailable) {
-                            fallbackProbe(probe)
+                        var result = latencyTester.probe(probe.url, endpoint, LATENCY_TIMEOUT_MILLIS)
+                        if (result == null) {
+                            // 首个请求可能赶在隧道完全就绪前发出，稍候重试一次再定论。
+                            delay(PROBE_RETRY_DELAY)
+                            result = latencyTester.probe(probe.url, endpoint, LATENCY_TIMEOUT_MILLIS)
+                        }
+                        if (result == null) {
+                            applyLatency(probe, -1)
+                            if (probe == LatencyProbe.Cloudflare) clearExitInfo()
                             false
                         } else {
-                            applyLatency(probe, delay)
+                            if (probe == LatencyProbe.Cloudflare) applyExitInfo(result.body)
+                            applyLatency(probe, result.delay)
                             true
                         }
                     }
                 }.awaitAll()
                 _uiState.value = _uiState.value.copy(latencyViaRules = viaRules.all { it })
             } finally {
-                _uiState.value = _uiState.value.copy(isTestingLatency = false)
+                if (generation == latencyGeneration) {
+                    _uiState.value = _uiState.value.copy(isTestingLatency = false)
+                }
             }
         }
     }
 
-    private suspend fun fallbackProbe(probe: LatencyProbe) {
-        val result = repository?.getProxyDelay("GLOBAL", probe.url, LATENCY_TIMEOUT_MILLIS.toInt())
-        applyLatency(probe, result?.getOrNull()?.delay ?: -1)
+    // 出口探测与延迟测试都走内核 mixed port：优先用运行时配置里已确认的端口，
+    // 缺失时再回落到订阅代理解析器（override 声明或向内核 API 查询）。
+    private suspend fun resolveProxyEndpoint(): String? {
+        _uiState.value.config?.mixedPort?.takeIf { it > 0 }?.let { return "http://127.0.0.1:$it" }
+        return latencyTester.resolveEndpoint()
+    }
+
+    // Cloudflare trace 的响应体自带出口信息：ip= 是代理出口 IP，colo= 是落地机房代码。
+    private fun applyExitInfo(body: String) {
+        val ip = EXIT_IP_REGEX.find(body)?.groupValues?.get(1).orEmpty()
+        val region = EXIT_REGION_REGEX.find(body)?.groupValues?.get(1).orEmpty()
+        _uiState.update { it.copy(exitIp = ip, exitRegion = region) }
+    }
+
+    private fun clearExitInfo() {
+        _uiState.update { it.copy(exitIp = "", exitRegion = "") }
     }
 
     private fun applyLatency(probe: LatencyProbe, delay: Int) {
@@ -739,6 +791,14 @@ class HomeViewModel(
         const val TRAFFIC_HISTORY_CAPACITY = 60
 
         private const val LATENCY_TIMEOUT_MILLIS = 5000L
+
+        private const val ENDPOINT_RETRY_DELAY = 1000L
+
+        private const val PROBE_RETRY_DELAY = 1000L
+
+        private val EXIT_IP_REGEX = Regex("^ip=(.+)$", RegexOption.MULTILINE)
+
+        private val EXIT_REGION_REGEX = Regex("^colo=(.+)$", RegexOption.MULTILINE)
 
         private const val TOP_CONNECTION_COUNT = 5
     }

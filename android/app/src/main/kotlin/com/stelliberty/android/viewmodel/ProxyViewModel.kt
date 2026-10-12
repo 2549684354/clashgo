@@ -9,6 +9,7 @@ import com.stelliberty.android.domain.model.ProxyPreview
 import com.stelliberty.android.domain.repository.MihomoRepository
 import com.stelliberty.android.domain.repository.ProxyPreviewRepository
 import com.stelliberty.android.platform.PlatformStorage
+import com.stelliberty.android.platform.ProxyNodeSwitchMonitor
 import com.stelliberty.android.platform.StorageKeys
 import com.stelliberty.android.util.AppLogger
 import com.stelliberty.android.util.describe
@@ -77,6 +78,7 @@ class ProxyViewModel(
     private val getActiveUuid: () -> String? = { null },
     private val storage: PlatformStorage? = null,
     private val previewRepository: ProxyPreviewRepository? = null,
+    private val nodeSwitches: ProxyNodeSwitchMonitor? = null,
     activeUuid: Flow<String?> = emptyFlow(),
     autoDelayRuns: Flow<MihomoRepository> = emptyFlow(),
 ) : ViewModel() {
@@ -444,6 +446,8 @@ class ProxyViewModel(
                             .toPersistentList(),
                     )
                     current.uuid?.let { proxySelections?.select(it, group, proxy) }
+                    // 节点已换，首页的站点访问延迟随之失效，广播一次让首页重测。
+                    nodeSwitches?.notifySwitched()
                 }.onFailure {
                     AppLogger.warn(TAG, "selectProxy failed", it)
                     _uiState.value = _uiState.value.copy(error = it.describe())
