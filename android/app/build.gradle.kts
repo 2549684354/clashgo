@@ -32,6 +32,11 @@ dependencies {
 val appVersionName = providers.gradleProperty("stelliberty.versionName").orElse(ProjectConfig.VERSION_NAME).get()
 val appVersionCode = versionCodeFor(appVersionName)
 
+// 必须先于 android{} 求值：defaultConfig 里的 buildConfigField 引用 mihomoVersion，
+// Kotlin 脚本按文件顺序执行，声明放后面会让 BuildConfig 渲染出字面量 "null"。
+val mihomoVersion = providers.gradleProperty("mihomo.version").orElse("dev").get()
+val mihomoVersionPath = "github.com/metacubex/mihomo/constant.Version"
+
 val supportedAbis: List<String> =
     providers.gradleProperty("stelliberty.abis").orNull
         ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)
@@ -236,8 +241,6 @@ val stellibertyCoreSourceDir = layout.projectDirectory.dir("src/main/native/stel
 // mishka 这个标签名不能跟着项目改名走：它被子模块自己的源码引用（几处文件名和编译约束里都写着），
 // 改了直接编译不过。
 val mihomoBuildTags = listOf("cmfa", "mishka", "with_gvisor")
-val mihomoVersion = providers.gradleProperty("mihomo.version").orElse("dev").get()
-val mihomoVersionPath = "github.com/metacubex/mihomo/constant.Version"
 val ndkDirectoryProvider = androidComponents.sdkComponents.ndkDirectory
 
 val buildMihomoTasks = supportedAbis.map { abi ->

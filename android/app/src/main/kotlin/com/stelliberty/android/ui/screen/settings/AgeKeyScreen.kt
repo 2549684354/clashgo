@@ -29,7 +29,9 @@ import com.stelliberty.android.platform.showToast
 import com.stelliberty.android.ui.component.CardItem
 import com.stelliberty.android.ui.component.groupedCardItems
 import com.stelliberty.android.ui.platform.setPlainText
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -44,14 +46,25 @@ fun AgeKeyScreen(
     // 关闭时保留密钥对，弹窗退场动画期间内容不消失。
     var showKeyPair by remember { mutableStateOf(false) }
     var keyPair by remember { mutableStateOf<AgeKeyPair?>(null) }
+    // 生成是阻塞式 JNI 调用，必须放 IO 线程；主线程直调一旦内核初始化失败/变慢就是 ANR。
+    val scope = rememberCoroutineScope()
+    var generating by remember { mutableStateOf(false) }
     val failedMsg = stringResource(R.string.age_key_generate_failed)
     val generate: (Boolean) -> Unit = { hybrid ->
-        val pair = StellibertyCoreBridge.generateAgeKeyPair(hybrid)
-        if (pair != null) {
-            keyPair = pair
-            showKeyPair = true
-        } else {
-            showToast(failedMsg)
+        if (!generating) {
+            generating = true
+            scope.launch {
+                val pair = withContext(Dispatchers.IO) {
+                    StellibertyCoreBridge.generateAgeKeyPair(hybrid)
+                }
+                generating = false
+                if (pair != null) {
+                    keyPair = pair
+                    showKeyPair = true
+                } else {
+                    showToast(failedMsg)
+                }
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import com.stelliberty.android.domain.model.RuleOverrideContext
 import com.stelliberty.android.service.ProfileFileOps
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -59,18 +60,32 @@ object StellibertyCoreBridge {
     // 保证任何 native 调用都晚于 nativeCoreInit。Application 启动路径只负责触发。
     private val coreReady = CountDownLatch(1)
 
+    // 加载失败时必须让等待方限时失败而不是无限阻塞（否则 9 个 native 入口全部永久挂起，主线程调用点直接 ANR）。
+    @Volatile
+    private var initFailure: Throwable? = null
+
     fun init(homeDir: String) {
         thread(name = "core-bridge-init") {
-            // 加载顺序不能换：桥接库链接了 mihomo 库里的符号，必须先把 mihomo 库装进来。
-            System.loadLibrary("mihomo")
-            System.loadLibrary("stelliberty_jni")
-            nativeCoreInit(homeDir)
-            coreReady.countDown()
+            try {
+                // 加载顺序不能换：桥接库链接了 mihomo 库里的符号，必须先把 mihomo 库装进来。
+                System.loadLibrary("mihomo")
+                System.loadLibrary("stelliberty_jni")
+                nativeCoreInit(homeDir)
+            } catch (t: Throwable) {
+                initFailure = t
+            } finally {
+                coreReady.countDown()
+            }
         }
     }
 
     private fun awaitCoreReady() {
-        coreReady.await()
+        initFailure?.let {
+            throw StellibertyCoreError("core init failed: ${it.message}")
+        }
+        if (!coreReady.await(CORE_INIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            throw StellibertyCoreError("core init timed out after ${CORE_INIT_TIMEOUT_SECONDS}s")
+        }
     }
 
     // 取消钩子必须在阻塞调用之前挂好：这个原生调用不响应协程取消，等它返回时下层已经清掉了取消登记表，
@@ -280,4 +295,7 @@ object StellibertyCoreBridge {
     private external fun nativeGenAgeHybridKeyPair(): String?
 
     private const val PROGRESS_POLL_INTERVAL_MS = 150L
+
+    // 正常加载在数百毫秒内完成；给低端机留足余量，失败也要有限时间把错误抛给调用方。
+    private const val CORE_INIT_TIMEOUT_SECONDS = 10L
 }
