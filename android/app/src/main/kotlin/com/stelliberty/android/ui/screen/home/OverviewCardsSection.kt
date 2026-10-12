@@ -25,9 +25,9 @@ import com.stelliberty.android.ui.theme.StatusColors
 import com.stelliberty.android.util.FormatUtils
 import com.stelliberty.android.viewmodel.HomeUiState
 import com.stelliberty.android.viewmodel.SpeedSnapshot
+import com.stelliberty.android.ui.icon.AppIcons
 import kotlin.math.roundToInt
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
@@ -39,7 +39,7 @@ fun LazyListScope.overviewCardsSection(
     onSubscriptionClick: () -> Unit = {},
 ) {
     item(key = "overview_title") {
-        SmallTitle(text = stringResource(R.string.home_overview))
+        HomeSectionTitle(icon = AppIcons.Info, text = stringResource(R.string.home_overview))
     }
     item(key = "overview_cards") {
         Row(

@@ -18,7 +18,6 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -45,7 +44,6 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.squircle.squircleBackground
-import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 fun LazyListScope.statusSection(
@@ -271,28 +269,8 @@ private fun GelButton(
             ),
             content = content,
         )
-        if (enabled) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .gelSheenBackground(cornerRadius),
-            )
-        }
     }
 }
-
-// 高光与按钮用同一 squircle 剪裁（Miuix Button 内部就是 squircleClip + 实色填充），
-// 保证渐变和按钮轮廓严丝合缝，不会在角部漏出。
-@Composable
-private fun Modifier.gelSheenBackground(cornerRadius: Dp): Modifier =
-    squircleClip(cornerRadius).background(
-        brush = Brush.verticalGradient(
-            0f to Color.White.copy(alpha = 0.30f),
-            0.42f to Color.White.copy(alpha = 0.05f),
-            0.72f to Color.Transparent,
-            1f to Color.Black.copy(alpha = 0.10f),
-        ),
-    )
 
 @Composable
 private fun StatusDetailLine(text: String, modifier: Modifier = Modifier) {

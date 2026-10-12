@@ -27,7 +27,6 @@ import com.stelliberty.android.viewmodel.HomeUiState
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -88,7 +87,7 @@ private fun LatencyHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SmallTitle(text = stringResource(R.string.home_latency))
+        HomeSectionTitle(icon = AppIcons.TestDelay, text = stringResource(R.string.home_latency))
         Row(
             modifier = Modifier.padding(end = 12.dp),
             verticalAlignment = Alignment.CenterVertically,

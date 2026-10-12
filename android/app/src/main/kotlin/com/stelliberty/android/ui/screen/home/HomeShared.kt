@@ -2,17 +2,23 @@ package com.stelliberty.android.ui.screen.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -49,6 +55,29 @@ internal fun BadgeLabel(text: String, color: Color = MiuixTheme.colorScheme.prim
 }
 
 private const val BadgeContainerAlpha = 0.16f
+
+// 首页分区标题：icon 与文字同色同排。样式复刻 miuix SmallTitle（subtitle 字号 + 其默认
+// insideMargin 28/8），只是把无前缀的纯文本换成「icon + 文字」，保证各分区观感一致。
+@Composable
+internal fun HomeSectionTitle(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.padding(horizontal = 28.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MiuixTheme.colorScheme.onBackgroundVariant,
+            modifier = Modifier.size(15.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = text,
+            style = MiuixTheme.textStyles.subtitle,
+            color = MiuixTheme.colorScheme.onBackgroundVariant,
+        )
+    }
+}
 
 @Composable
 internal fun InfoRow(label: String, value: String, modifier: Modifier = Modifier) {

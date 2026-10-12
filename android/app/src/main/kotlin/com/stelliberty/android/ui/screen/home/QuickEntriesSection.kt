@@ -14,8 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stelliberty.android.R
+import com.stelliberty.android.ui.icon.AppIcons
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
@@ -29,7 +29,7 @@ fun LazyListScope.quickEntriesSection(
     onReload: () -> Unit = {},
 ) {
     item(key = "quick_entries_title") {
-        SmallTitle(text = stringResource(R.string.home_tools))
+        HomeSectionTitle(icon = AppIcons.NavSettings, text = stringResource(R.string.home_tools))
     }
     item(key = "quick_entries") {
         Column(
