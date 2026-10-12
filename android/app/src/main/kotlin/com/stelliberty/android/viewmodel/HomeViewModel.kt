@@ -219,12 +219,14 @@ class HomeViewModel(
                     }
 
                     // 这两个分支整体重建状态来清掉运行期的热数据，因此每个要留下的字段都得显式带上。
-                    // tunMode 漏了就退回构造默认的 VPN，用户选着 ROOT 却在首页看到 VPN。
+                    // tunMode 漏了就退回构造默认的 VPN，用户选着 ROOT 却在首页看到 VPN；
+                    // version 漏了内核署名就会在停止后丢掉版本号（构建期注入的值不会变）。
                     ProxyState.Stopped -> {
                         _uiState.value = HomeUiState(
                             mode = persistedMode(),
                             profileName = _uiState.value.profileName,
                             tunMode = status.tunMode,
+                            version = _uiState.value.version,
                         )
                         lastErrorToast = null
                         resetHotStates()
@@ -241,6 +243,7 @@ class HomeViewModel(
                             mode = persistedMode(),
                             profileName = _uiState.value.profileName,
                             tunMode = status.tunMode,
+                            version = _uiState.value.version,
                         )
                         resetHotStates()
                     }
