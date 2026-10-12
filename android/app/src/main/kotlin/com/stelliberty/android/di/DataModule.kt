@@ -25,6 +25,7 @@ import com.stelliberty.android.domain.repository.OverrideProfileRepository
 import com.stelliberty.android.domain.repository.ProxyPreviewRepository
 import com.stelliberty.android.domain.repository.RuleOverrideRepository
 import com.stelliberty.android.domain.repository.SubscriptionRepository
+import com.stelliberty.android.platform.AppVisibilityMonitor
 import com.stelliberty.android.util.AppLogger
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -52,8 +53,22 @@ val dataModule = module {
     single { SubscriptionProxyResolver(get()) }
     single<AppUpdateRepository> { AppUpdateRepositoryImpl(get()) }
     single { RuleLatencyTester(get()) }
-    single { MihomoConnectionManager(get()) }
-    single { AutoDelayTester(get(), get(), get()) }
+    // 两个可见性参数是 StateFlow<Boolean>：不能走裸 get()（会按 StateFlow 类型找定义，
+    // v1.1.0 正式版因此启动即崩），必须显式取自 AppVisibilityMonitor。
+    single {
+        MihomoConnectionManager(
+            appVisible = get<AppVisibilityMonitor>().visible,
+            scope = get(),
+        )
+    }
+    single {
+        AutoDelayTester(
+            scope = get(),
+            connectionManager = get(),
+            subscriptions = get(),
+            appVisible = get<AppVisibilityMonitor>().visible,
+        )
+    }
 
     single {
         SubscriptionRepositoryImpl(

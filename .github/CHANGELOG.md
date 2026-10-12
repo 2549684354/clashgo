@@ -1,15 +1,21 @@
-- Added app update checks with stable and test channels, so you can now check for new versions on the About page and get notified at startup
-- Fixed an issue with the default subscription User-Agent that previously made some panels drop nodes such as Hysteria2 and fail to import with a missing proxy group error
-- Fixed an issue with updating subscriptions through the proxy that previously still downloaded subscriptions and providers directly
-- Fixed an issue with provider caches that previously made the core download providers again before every start, especially in ROOT mode, and let files with the same name overwrite each other
-- Fixed an issue with proxy startup that previously failed while the core was still downloading providers
-- Improved startup error reports, which now keep the beginning of the core log so config parsing errors still show when there are many providers
+- Added a proxy page preview that shows the selected subscription's nodes before the proxy starts, so you can review and adjust selections without a running core
+- Reworked node delay testing, which now measures nodes before the proxy starts, streams results as they arrive, and keeps results and the delay sort after stop, restart, and app exit
+- Moved the group delay test to the action bar
+- Added compact, standard, and relaxed node card densities, selectable from the more menu
+- Merged the home action buttons into the status card
+- Added soft card shadows on the home page
+- Improved background power usage, which now pauses automatic delay tests, core log streaming, and connection list pushes while the app is in the background
+- Improved the traffic notification and log file writes, which now skip per-second rebuilds and per-line writes while the screen is off
+- Moved most open source license links behind a More page on the About screen
 
 ---
 
-- 新增了应用更新检查，现在可以在关于页面按稳定版或测试版渠道检查新版本，并在启动时收到新版本提醒
-- 修复了订阅默认 User-Agent 的问题，该问题曾导致部分面板过滤掉 Hysteria2 等节点，导入时报代理组不存在
-- 修复了通过代理更新订阅的问题，该问题曾导致订阅和 provider 实际上仍然直连下载
-- 修复了 provider 缓存的问题，该问题曾导致每次启动前核心都要重新下载 provider（ROOT 模式尤为明显），同名文件还会相互覆盖
-- 修复了启动代理的问题，该问题曾导致核心还在下载 provider 时就被判定启动失败
-- 对启动失败的错误信息进行了改善，现在会保留核心日志的开头部分，provider 较多时也能看到配置解析阶段的错误
+- 新增了代理页预览，代理启动前即可显示所选订阅的节点，无需运行内核就能查看和调整节点选择
+- 重做了节点延迟测试，现在代理启动前也能测延迟，结果逐个呈现，停止、重启和退出应用后不再丢失，延迟排序也一并保留
+- 将代理组的延迟测试移到了操作栏
+- 新增了紧凑、标准、宽松三档节点卡片密度，可在更多菜单中选择
+- 将首页操作按钮合并进了状态卡
+- 为首页卡片添加了柔和投影
+- 降低了后台耗电，应用退到后台时自动测延迟、内核日志流和连接列表推送会暂停
+- 改善了流量通知与日志文件写入，灭屏时不再逐秒重建通知、逐行写日志
+- 将关于页的开源许可链接大部分收进了「更多」页面

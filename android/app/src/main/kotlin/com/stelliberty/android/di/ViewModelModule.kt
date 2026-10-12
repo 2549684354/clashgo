@@ -2,6 +2,7 @@ package com.stelliberty.android.di
 
 import com.stelliberty.android.domain.repository.SubscriptionRepository
 import com.stelliberty.android.data.api.AutoDelayTester
+import com.stelliberty.android.platform.AppVisibilityMonitor
 import com.stelliberty.android.viewmodel.AppProxyViewModel
 import com.stelliberty.android.viewmodel.AppUpdateViewModel
 import com.stelliberty.android.viewmodel.BackupViewModel
@@ -27,6 +28,7 @@ val viewModelModule = module {
             overrideStore = get(),
             connectionManager = get(),
             latencyTester = get(),
+            appVisible = get<AppVisibilityMonitor>().visible,
             getActiveSubscriptionId = { get<SubscriptionRepository>().getActive()?.id },
             activeSubscription = get<SubscriptionRepository>().activeSubscription,
             onLiveProviderInfo = get<SubscriptionRepository>()::setLiveProviderInfo,
@@ -62,7 +64,7 @@ val viewModelModule = module {
     single { ClashFeaturesViewModel(get()) }
     single { LogViewModel() }
     single { ProviderViewModel() }
-    single { ConnectionViewModel() }
+    single { ConnectionViewModel(get<AppVisibilityMonitor>().visible) }
     single { DnsQueryViewModel() }
     single {
         OverrideProfileViewModel(

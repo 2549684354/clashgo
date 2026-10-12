@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -125,6 +126,7 @@ class HomeViewModel(
     private val overrideStore: OverrideJsonStore,
     private val connectionManager: MihomoConnectionManager,
     private val latencyTester: RuleLatencyTester,
+    private val appVisible: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow(),
     private val getActiveSubscriptionId: () -> String? = { null },
     private val activeSubscription: StateFlow<Subscription?> = MutableStateFlow(null).asStateFlow(),
     private val onLiveProviderInfo: (subscriptionId: String?, info: SubscriptionInfo?) -> Unit = { _, _ -> },
@@ -171,11 +173,11 @@ class HomeViewModel(
     private var mihomoPid: Int = -1
     private val systemInfo = PlatformSystemInfo()
 
-    // 可见性是两个信号的与：Activity 前后台 + 首页分页是否真的可见（主页面常驻组合，
+    // 可见性是两个信号的与：Activity 前后台（appVisible 即共享的 AppVisibilityMonitor，
+    // MainActivity onStart/onStop 写入）+ 首页分页是否真的可见（主页面常驻组合，
     // Pager 包装的生命周期才反映分页离屏）。任一为假都按不可见处理。
-    private val uiVisible = MutableStateFlow(true)
-    private val foregroundVisible = MutableStateFlow(true)
     private val homeVisible = MutableStateFlow(true)
+    private val uiVisible = combine(appVisible, homeVisible) { foreground, home -> foreground && home }
 
     private var lastErrorToast: String? = null
 
@@ -551,18 +553,8 @@ class HomeViewModel(
             }
         }
 
-    fun setForegroundVisible(visible: Boolean) {
-        foregroundVisible.value = visible
-        updateUiVisible()
-    }
-
     fun setHomeVisible(visible: Boolean) {
         homeVisible.value = visible
-        updateUiVisible()
-    }
-
-    private fun updateUiVisible() {
-        uiVisible.value = foregroundVisible.value && homeVisible.value
     }
 
     // 与 pollWhileVisible 同一可见性契约，但用于不会自己结束的推送流：隐藏时取消收集协程，
