@@ -59,6 +59,14 @@ ICONS: dict[str, str] = {
     "NavSettings": "regular/system/settings_3.svg",
     "NavSettingsActive": "filled/system/settings_3.svg",
     "Play": "regular/media/play_circle.svg",
+    # 首页运行态三胶囊：热重载取火焰（点「热」字，与测延迟的闪电区分），停止、重启各一枚动作图标
+    "HotReload": "regular/system/flame.svg",
+    "Stop": "regular/media/stop.svg",
+    "Restart": "regular/system/refresh_1.svg",
+    # 订阅页「添加配置」菜单：文件 / 链接 / 扫码
+    "SubscriptionFile": "regular/files/file.svg",
+    "SubscriptionLink": "regular/files/link.svg",
+    "SubscriptionQr": "regular/devices/qrcode.svg",
 }
 
 

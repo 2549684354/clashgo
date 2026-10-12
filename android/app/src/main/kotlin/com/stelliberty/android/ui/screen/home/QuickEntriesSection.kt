@@ -26,6 +26,7 @@ fun LazyListScope.quickEntriesSection(
     onNavigateProvider: () -> Unit = {},
     onNavigateConnection: () -> Unit = {},
     onNavigateDnsQuery: () -> Unit = {},
+    onReload: () -> Unit = {},
 ) {
     item(key = "quick_entries_title") {
         SmallTitle(text = stringResource(R.string.home_tools))
@@ -75,6 +76,14 @@ fun LazyListScope.quickEntriesSection(
                     onClick = onNavigateDnsQuery,
                 )
             }
+            // 热重载是运维动作，从状态卡挪到这里：改完配置/更新完订阅后来这一下让内核生效。
+            QuickEntryCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = stringResource(R.string.home_reload),
+                subtitle = stringResource(R.string.home_reload_subtitle),
+                isRunning = isRunning,
+                onClick = onReload,
+            )
         }
     }
 }

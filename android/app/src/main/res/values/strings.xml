@@ -108,12 +108,9 @@
     <string name="home_port_tproxy">TPROXY %1$d</string>
 
     <!-- Home - Action Buttons -->
-    <string name="home_restart">Restart</string>
     <string name="home_stop">Stop</string>
     <string name="home_reload">Hot Reload</string>
     <string name="home_start">Start</string>
-    <string name="home_starting_btn">Starting...</string>
-    <string name="home_stopping_btn">Stopping...</string>
 
     <!-- Home - Quick Entries -->
     <string name="home_providers">Providers</string>
@@ -124,6 +121,7 @@
     <string name="home_logs_subtitle">View</string>
     <string name="home_dns">DNS</string>
     <string name="home_dns_subtitle">Query</string>
+    <string name="home_reload_subtitle">Apply config</string>
 
     <!-- Home - Latency -->
     <string name="home_latency">Latency</string>
@@ -217,7 +215,6 @@
     <string name="subscription_delete_summary">Delete \"%1$s\"? This will remove the config files and selection history.</string>
 
     <!-- Subscription Create/Edit -->
-    <string name="subscription_create">Create Config</string>
     <string name="subscription_edit">Edit Config</string>
     <string name="subscription_file">File</string>
     <string name="subscription_file_summary">Pick a local config; no auto-update</string>
