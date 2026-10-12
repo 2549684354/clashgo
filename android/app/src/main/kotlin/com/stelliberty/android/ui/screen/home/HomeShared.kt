@@ -30,7 +30,7 @@ internal fun Modifier.cardShadow(cornerRadius: Dp): Modifier = shadow(
     shape = RoundedCornerShape(cornerRadius),
 )
 
-private val CardShadowElevation = 8.dp
+private val CardShadowElevation = 4.dp
 
 // miuix Card 的默认圆角，首页所有走默认值的卡片共用。
 internal val HomeCardCornerRadius = 16.dp
