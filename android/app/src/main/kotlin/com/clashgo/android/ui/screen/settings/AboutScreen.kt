@@ -1,6 +1,5 @@
 package com.clashgo.android.ui.screen.settings
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -41,7 +39,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -192,7 +189,6 @@ private fun AboutContent(
 
     val versionProgress = { ((scrollProgress() - 0.05f) / 0.15f).coerceIn(0f, 1f) }
     val projectNameProgress = { ((scrollProgress() - 0.20f) / 0.15f).coerceIn(0f, 1f) }
-    val iconProgress = { ((scrollProgress() - 0.35f) / 0.15f).coerceIn(0f, 1f) }
 
     val scrollPadding = PaddingValues(
         top = innerPadding.calculateTopPadding(),
@@ -226,41 +222,6 @@ private fun AboutContent(
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clipToBounds()
-                    .graphicsLayer {
-                        val p = iconProgress()
-                        alpha = 1 - p
-                        scaleX = 1 - (p * 0.05f)
-                        scaleY = 1 - (p * 0.05f)
-                    },
-            ) {
-                Image(
-                    modifier = Modifier
-                        .requiredSize(200.dp)
-                        .then(
-                            if (blurEnabled) {
-                                Modifier.textureBlur(
-                                    backdrop = backdrop,
-                                    shape = RoundedCornerShape(0.dp),
-                                    blurRadius = 150f,
-                                    colors = BlurColors(blendColors = logoBlend),
-                                    contentBlendMode = BlendMode.DstIn,
-                                    enabled = true,
-                                )
-                            } else Modifier
-                        ),
-                    // 前景整图带渐变底，tint 单色会糊成色块；这里要的是白色剪影（ic_launcher_monochrome）
-                    // 被染成主题色后的效果。
-                    painter = painterResource(R.drawable.ic_launcher_monochrome),
-                    colorFilter = ColorFilter.tint(colorScheme.onBackground),
-                    // 紧挨着下面就是应用名，读屏再念一遍图标属于噪音。
-                    contentDescription = null,
-                )
-            }
             Text(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 5.dp)
