@@ -376,7 +376,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        homeViewModel.setUiVisible(true)
+        homeViewModel.setForegroundVisible(true)
     }
 
     override fun onDestroy() {
@@ -386,7 +386,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        homeViewModel.setUiVisible(false)
+        homeViewModel.setForegroundVisible(false)
     }
 
     private fun showQrToast(@StringRes resId: Int) {

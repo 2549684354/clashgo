@@ -26,3 +26,4 @@
 - 滚动窗口的 x 步长取 `capacity - 2`：窗口填满后，最老的点恰好从 `x=0` 滑到 `x=-step`，左边缘始终有内容。
 - 滑入进度与纵轴上限都在 `onDrawBehind` 里读（只重绘不重组）。
 - 滚动与纵轴缩放动画放在 `repeatOnLifecycle(STARTED)` 内：主页面保持组合，离屏时动画随生命周期暂停（仅暂停数据收集停不下进行中的动画）。
+- 数据收集侧同样按可见性启停：`HomeViewModel` 以「前台 × 首页分页可见」两个信号的与为准（`setForegroundVisible` / `setHomeVisible`），流量与内存推流走 `collectWhileVisible`（隐藏即取消收集、断开 WS 通道），轮询走 `pollWhileVisible`；回前台重新订阅，流量窗口重新补零。
