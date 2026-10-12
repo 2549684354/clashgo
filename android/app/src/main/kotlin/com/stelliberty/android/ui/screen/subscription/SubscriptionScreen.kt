@@ -77,6 +77,7 @@ fun SubscriptionScreen(
     onScanQr: (() -> Unit)? = null,
     onNavigateEdit: (uuid: String) -> Unit = {},
     onActiveChanged: (() -> Unit)? = null,
+    isNavTop: Boolean = true,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollBehavior = MiuixScrollBehavior()
@@ -280,8 +281,10 @@ fun SubscriptionScreen(
         ProfileOperation.Update -> stringResource(R.string.subscription_update_config)
         else -> stringResource(R.string.subscription_import_config)
     }
+    // 本页被 push 出去的子页（URL 导入/编辑等）会渲染它们自己的进度弹窗；
+    // NavDisplay 保留底层页面的组合，这里不再显示，避免同一进度弹出两个。
     ImportProgressDialog(
-        show = uiState.importProgress != null,
+        show = isNavTop && uiState.importProgress != null,
         step = uiState.importProgress?.let { importStepLabel(it) } ?: stringResource(R.string.common_processing),
         title = title,
         onCancel = { viewModel.cancelCurrentUpdate() },

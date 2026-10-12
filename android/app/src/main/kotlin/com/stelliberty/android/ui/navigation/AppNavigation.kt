@@ -337,6 +337,7 @@ fun AppNavigation(
                     onPickSubscriptionFile = pickSubscriptionFile,
                     onNavigateSubscriptionUrl = navigateSubscriptionUrl,
                     onScanSubscriptionQr = scanSubscriptionQr,
+                    isNavTop = { backStack.lastOrNull() == Route.Main },
                 )
             }
             entry<Route.SubscriptionAddUrl>(swipeDismiss = swipeDismiss) { route ->
@@ -684,6 +685,7 @@ private fun MainPage(
     onPickSubscriptionFile: () -> Unit = {},
     onNavigateSubscriptionUrl: () -> Unit = {},
     onScanSubscriptionQr: (() -> Unit)? = null,
+    isNavTop: () -> Boolean = { true },
 ) {
     val homeUiState = homeViewModel?.uiState?.collectAsStateWithLifecycle()?.value ?: HomeUiState()
     val selectedPage = mainPagerState.selectedPage
@@ -739,6 +741,7 @@ private fun MainPage(
                             onScanQr = onScanSubscriptionQr,
                             onNavigateEdit = { uuid -> navigator.push(Route.SubscriptionEdit(uuid)) },
                             onActiveChanged = { homeViewModel?.onActiveSubscriptionChanged() },
+                            isNavTop = isNavTop(),
                         )
                     }
 
