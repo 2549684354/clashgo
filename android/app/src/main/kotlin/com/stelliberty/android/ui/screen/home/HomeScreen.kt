@@ -110,15 +110,10 @@ fun HomeScreen(
                 statusSection(
                     state = uiState,
                     uptime = uptime,
-                )
-                actionButtonsSection(
-                    onRestart = onRestart,
-                    onStop = onStop,
                     onReload = onReload,
+                    onStop = onStop,
+                    onRestart = onRestart,
                     onStart = onStartProxy,
-                    isRunning = uiState.isRunning,
-                    isStarting = uiState.isStarting,
-                    isStopping = uiState.isStopping,
                 )
                 overviewCardsSection(
                     speed = speed,

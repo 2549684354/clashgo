@@ -26,6 +26,7 @@ object AppIcons {
     val NavSubscription: ImageVector get() = MingCuteMoonCloudy
     val NavSubscriptionActive: ImageVector get() = MingCuteMoonCloudyFilled
     val Pin: ImageVector get() = MingCutePin
+    val Play: ImageVector get() = MingCutePlayCircle
     val Refresh: ImageVector get() = MingCuteRefresh2
     val Restore: ImageVector get() = MingCuteDownload
     val Search: ImageVector get() = MingCuteSearch
