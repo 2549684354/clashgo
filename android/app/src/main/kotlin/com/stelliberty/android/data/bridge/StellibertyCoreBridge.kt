@@ -5,8 +5,10 @@ import com.stelliberty.android.domain.model.ProxyPreview
 import com.stelliberty.android.domain.model.RuleOverrideContext
 import com.stelliberty.android.service.ProfileFileOps
 import java.io.File
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
@@ -52,14 +54,23 @@ object StellibertyCoreBridge {
     private val tokenSeq = AtomicInteger(1)
     private val json = Json { ignoreUnknownKeys = true }
 
-    init {
-        // 加载顺序不能换：桥接库链接了 mihomo 库里的符号，必须先把 mihomo 库装进来。
-        System.loadLibrary("mihomo")
-        System.loadLibrary("stelliberty_jni")
-    }
+    // 内核库很大（v1.19.32 起未压缩 70MB+），主线程 dlopen 会把冷启动的首屏帧堵死。
+    // 因此加载与内核初始化放到后台完成，所有 native 入口先 awaitCoreReady() 等就绪，
+    // 保证任何 native 调用都晚于 nativeCoreInit。Application 启动路径只负责触发。
+    private val coreReady = CountDownLatch(1)
 
     fun init(homeDir: String) {
-        nativeCoreInit(homeDir)
+        thread(name = "core-bridge-init") {
+            // 加载顺序不能换：桥接库链接了 mihomo 库里的符号，必须先把 mihomo 库装进来。
+            System.loadLibrary("mihomo")
+            System.loadLibrary("stelliberty_jni")
+            nativeCoreInit(homeDir)
+            coreReady.countDown()
+        }
+    }
+
+    private fun awaitCoreReady() {
+        coreReady.await()
     }
 
     // 取消钩子必须在阻塞调用之前挂好：这个原生调用不响应协程取消，等它返回时下层已经清掉了取消登记表，
@@ -73,6 +84,7 @@ object StellibertyCoreBridge {
         ageSecretKey: String,
         onProgress: suspend (CoreFetchProgress) -> Unit,
     ): CoreFetchResult = coroutineScope {
+        awaitCoreReady()
         val token = tokenSeq.getAndIncrement()
         val nativeDone = AtomicBoolean(false)
         val canceller = launch {
@@ -138,6 +150,7 @@ object StellibertyCoreBridge {
     private external fun nativeQueryProgress(token: Int): String?
 
     fun generateAgeKeyPair(hybrid: Boolean = false): AgeKeyPair? {
+        awaitCoreReady()
         val raw = (if (hybrid) nativeGenAgeHybridKeyPair() else nativeGenAgeKeyPair()) ?: return null
         if (raw.startsWith("error:")) return null
         val lines = raw.split("\n")
@@ -150,6 +163,7 @@ object StellibertyCoreBridge {
 
     // 把 age 加密的配置解到 target，未加密的原样复制；失败抛 StellibertyCoreError。
     fun decryptFile(source: File, target: File, secretKey: String) {
+        awaitCoreReady()
         val raw = nativeDecryptFile(source.path, target.path, secretKey)
         if (raw != null && raw.startsWith("error:")) {
             throw StellibertyCoreError(raw.removePrefix("error:").trim())
@@ -158,6 +172,7 @@ object StellibertyCoreBridge {
 
     // 从 APK 里解出 xz 压缩的 asset 写到 target，失败抛 StellibertyCoreError。
     fun extractXzAsset(apkPath: String, entry: String, target: File) {
+        awaitCoreReady()
         val raw = nativeExtractXzAsset(apkPath, entry, target.path)
         if (raw != null && raw.startsWith("error:")) {
             throw StellibertyCoreError(raw.removePrefix("error:").trim())
@@ -172,31 +187,38 @@ object StellibertyCoreBridge {
 
     // 与运行时同一套变换与解析流程，失败抛 StellibertyCoreError；返回变换后的配置是否含链式代理循环引用。
     fun validateTransform(workDir: File, transform: File, ageSecretKey: String): Boolean {
+        awaitCoreReady()
         ProfileFileOps.awaitGeodata()
         val raw = nativeValidateTransform(workDir.path, transform.path, ageSecretKey)
         return decodePayload(raw, TransformCheck.serializer()).hasCycle
     }
 
     // transform 为 null 时直接取订阅原文。
-    fun chainProxyContext(workDir: File, transform: File?, ageSecretKey: String): ChainProxyContext =
-        decodePayload(
+    fun chainProxyContext(workDir: File, transform: File?, ageSecretKey: String): ChainProxyContext {
+        awaitCoreReady()
+        return decodePayload(
             nativeChainProxyContext(workDir.path, transform?.path.orEmpty(), ageSecretKey),
             ChainProxyContext.serializer(),
         )
+    }
 
     // transform 只带覆写与链式代理，得到的是规则覆写之前的基线。
-    fun ruleContext(workDir: File, transform: File?, ageSecretKey: String): RuleOverrideContext =
-        decodePayload(
+    fun ruleContext(workDir: File, transform: File?, ageSecretKey: String): RuleOverrideContext {
+        awaitCoreReady()
+        return decodePayload(
             nativeRuleContext(workDir.path, transform?.path.orEmpty(), ageSecretKey),
             RuleOverrideContext.serializer(),
         )
+    }
 
     // 内核未运行时代理页的静态预览，与 ruleContext 同一份配置口径，provider 成员从缓存文件补齐。
-    fun proxyPreview(workDir: File, transform: File?, ageSecretKey: String): ProxyPreview =
-        decodePayload(
+    fun proxyPreview(workDir: File, transform: File?, ageSecretKey: String): ProxyPreview {
+        awaitCoreReady()
+        return decodePayload(
             nativeProxyPreview(workDir.path, transform?.path.orEmpty(), ageSecretKey),
             ProxyPreview.serializer(),
         )
+    }
 
     // 内核未运行时的节点测速：应用进程内组装真实出口跑内核 URLTest，与运行时 /proxies/{name}/delay 同口径。
     // 阻塞式 JNI 调用（不响应协程取消），调用方须留在 Dispatchers.IO 并自行限并发。
@@ -206,8 +228,9 @@ object StellibertyCoreBridge {
         ageSecretKey: String,
         nodeName: String,
         timeoutMs: Int,
-    ): Int =
-        decodePayload(
+    ): Int {
+        awaitCoreReady()
+        return decodePayload(
             nativeProxyNodeDelay(
                 workDir.path,
                 transform?.path.orEmpty(),
@@ -217,6 +240,7 @@ object StellibertyCoreBridge {
             ),
             ProxyNodeDelay.serializer(),
         ).delay
+    }
 
     private fun <T> decodePayload(raw: String?, serializer: KSerializer<T>): T {
         if (raw.isNullOrEmpty()) throw StellibertyCoreError("native returned empty result")
