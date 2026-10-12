@@ -2,6 +2,7 @@ package overrides
 
 import (
 	"fmt"
+	"sort"
 
 	"go.yaml.in/yaml/v3"
 )
@@ -45,7 +46,9 @@ func ProxyPreviewOf(config []byte, providerContents map[string][]byte) (*ProxyPr
 	providerMembers := make(map[string][]PreviewNode, len(providerContents))
 	providerNodeSeen := make(map[string]bool)
 	var providerNodes []PreviewNode
-	for name, content := range providerContents {
+	// Go map 迭代顺序随机：先按 provider 名排序，同一份配置每次得到确定的节点顺序与同名归属。
+	for _, name := range sortedProviderNames(providerContents) {
+		content := providerContents[name]
 		nodes := previewProviderNodes(content)
 		providerMembers[name] = nodes
 		for _, node := range nodes {
@@ -92,8 +95,9 @@ func ProxyPreviewOf(config []byte, providerContents map[string][]byte) (*ProxyPr
 			}
 		}
 		if includeProviders {
-			for _, nodes := range providerMembers {
-				for _, node := range nodes {
+			// 与上面聚合顺序同口径：按 provider 名排序迭代，保证成员列表可复现。
+			for _, providerName := range sortedProviderNames(providerMembers) {
+				for _, node := range providerMembers[providerName] {
 					members = append(members, node.Name)
 				}
 			}
@@ -123,8 +127,9 @@ func FindNodeMapping(config []byte, name string, providerContents map[string][]b
 	if node := nodeMappingByName(mappingItems(root, "proxies"), name); node != nil {
 		return nodeMappingToMap(node)
 	}
-	for _, content := range providerContents {
-		providerNodes, err := providerProxyMappings(content)
+	// 同名节点可能存在于多个 provider，map 迭代随机会让"先见者"不可复现；排序后归属确定。
+	for _, providerName := range sortedProviderNames(providerContents) {
+		providerNodes, err := providerProxyMappings(providerContents[providerName])
 		if err != nil {
 			continue
 		}
@@ -133,6 +138,16 @@ func FindNodeMapping(config []byte, name string, providerContents map[string][]b
 		}
 	}
 	return nil, fmt.Errorf("node %q not found", name)
+}
+
+// sortedProviderNames 返回升序的 provider 名，供所有 map 迭代点使用，消除 Go map 的随机顺序。
+func sortedProviderNames[V any](m map[string]V) []string {
+	names := make([]string, 0, len(m))
+	for name := range m {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 func nodeMappingByName(mappings []*yaml.Node, name string) *yaml.Node {

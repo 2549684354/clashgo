@@ -17,8 +17,9 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// 与运行时测速同一目标：应用各处的 delay 测试都没传自定义 URL，沿用内核 REST 的默认值。
-const previewDelayTestURL = "http://www.gstatic.com/generate_204"
+// 与运行时测速同一目标：运行态 REST 的默认探测地址已改为 cp.cloudflare.com，预览态保持同口径，
+// 同一节点在内核未运行/运行中两种状态下的延迟数字才可比。
+const previewDelayTestURL = "http://cp.cloudflare.com/generate_204"
 
 type previewDelayResult struct {
 	Delay int `json:"delay"`
@@ -38,7 +39,10 @@ func applyUnifiedDelayFromConfig(config []byte) (restore func()) {
 	// 只关心顶层这一个布尔；其余字段解析失败与否都不影响测速。
 	_ = yaml.Unmarshal(config, &head)
 	prev := adapter.UnifiedDelay.Swap(head.UnifiedDelay)
-	return func() { adapter.UnifiedDelay.Store(prev) }
+	// 恢复必须走 CAS：URLTest 最长 5 秒且不可取消，期间用户可能启动内核并按配置写入 UnifiedDelay。
+	// 直接 Store(prev) 会把内核刚写的值回滚成预览前快照，运行态测速口径被静默改变；
+	// 仅当值仍是预览写入的 head.UnifiedDelay 时才还原，内核的中途写入得以保留。
+	return func() { adapter.UnifiedDelay.CompareAndSwap(head.UnifiedDelay, prev) }
 }
 //
 //export stellibertyProxyNodeDelay

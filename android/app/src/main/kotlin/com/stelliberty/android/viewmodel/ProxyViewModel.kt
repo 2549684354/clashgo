@@ -275,25 +275,33 @@ class ProxyViewModel(
             stateMutex.withLock {
                 // 预览只服务「无内核 + 当前订阅」两个前提，任一变化都说明结果已过期。
                 if (session != null || getActiveUuid() != id) return@withLock
-                _uiState.value = ProxyUiState(groups = mapPreview(id, preview), isProxyRunning = false)
+                previewUuid = uuid
+                // 延迟只在同一订阅的预览间保留：换订阅时节点重名会串结果，直接丢弃。
+                val preserved = if (preservedUuid == uuid) preservedDelays else emptyMap()
+                preservedDelays = emptyMap()
+                preservedUuid = null
+                // 跨进程重启：同订阅最近一次测得的延迟从 store 回填；本会话刚捕获的 preserved 优先。
+                val seed = proxyDelays?.delays(id).orEmpty() + preserved
+                val selections = proxySelections?.selections(id).orEmpty()
+                // 与运行态 loadProxies 同理：数千节点的映射在主线程要十余毫秒，正好落在切页动画期间。
+                val groups = withContext(Dispatchers.Default) {
+                    buildPreviewGroups(preview, selections, seed)
+                }
+                _uiState.value = ProxyUiState(groups = groups, isProxyRunning = false)
             }
         }
     }
 
-    // 配置里的组类型是内核 CLI 写法（select / url-test），映射成运行时 API 的名字才能复用选中态判断。
-    private fun mapPreview(uuid: String, preview: ProxyPreview): ImmutableList<ProxyGroupUi> {
-        val selections = proxySelections?.selections(uuid).orEmpty()
+    // 纯计算：只读入参、只产不可变结构，供预览路径在 Default 调度器上执行。
+    private fun buildPreviewGroups(
+        preview: ProxyPreview,
+        selections: Map<String, String>,
+        seed: Map<String, Int>,
+    ): ImmutableList<ProxyGroupUi> {
         val nodeTypes = mutableMapOf<String, String>()
         preview.nodes.forEach {
             if (it.type.isNotEmpty()) nodeTypes[it.name] = it.type
         }
-        previewUuid = uuid
-        // 延迟只在同一订阅的预览间保留：换订阅时节点重名会串结果，直接丢弃。
-        val preserved = if (preservedUuid == uuid) preservedDelays else emptyMap()
-        preservedDelays = emptyMap()
-        preservedUuid = null
-        // 跨进程重启：同订阅最近一次测得的延迟从 store 回填；本会话刚捕获的 preserved 优先。
-        val seed = proxyDelays?.delays(uuid).orEmpty() + preserved
         return preview.groups.map { group ->
             val saved = selections[group.name]
             val type = PREVIEW_GROUP_TYPES[group.type.lowercase()] ?: group.type

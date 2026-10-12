@@ -20,7 +20,7 @@ class ProxyPreviewRepositoryImpl(
     // 与运行时同一套变换（覆写 + 链式代理）；规则覆写只动 rules 段，预览不需要套。
     override suspend fun load(subscriptionId: String): ProxyPreview? = withContext(Dispatchers.IO) {
         val subscription = subscriptionStore.findImported(subscriptionId) ?: return@withContext null
-        val transform = transformWriter.write(subscription, PREVIEW_TRANSFORM, rules = null)
+        val transform = transformWriter.write(subscription, uniqueTransformName(), rules = null)
         try {
             StellibertyCoreBridge.proxyPreview(
                 workDir = File(fileManager.getImportedDir(subscription.id)),
@@ -36,13 +36,15 @@ class ProxyPreviewRepositoryImpl(
     }
 
     // 每次调用现场重取变换文件：JNI 侧按 workDir + transform 读配置，测速本身远比这一读一写贵。
+    // 文件名必须每次唯一：组测速并发跑多份"写→读→删"，固定名会让任一协程删掉别人还没读完的文件，
+    // 或让读方拿到半截 YAML，表现为大批节点随机假超时。
     override suspend fun testNodeDelay(
         subscriptionId: String,
         nodeName: String,
         timeoutMs: Int,
     ): Int? = withContext(Dispatchers.IO) {
         val subscription = subscriptionStore.findImported(subscriptionId) ?: return@withContext null
-        val transform = transformWriter.write(subscription, PREVIEW_TRANSFORM, rules = null)
+        val transform = transformWriter.write(subscription, uniqueTransformName(), rules = null)
         try {
             StellibertyCoreBridge.proxyNodeDelay(
                 workDir = File(fileManager.getImportedDir(subscription.id)),
@@ -61,6 +63,8 @@ class ProxyPreviewRepositoryImpl(
 
     private companion object {
         const val TAG = "ProxyPreviewRepository"
-        const val PREVIEW_TRANSFORM = "proxy.preview.json"
+
+        // 并发场景下每次调用生成唯一文件名，杜绝"写→读→删"对同一固定路径的交叉竞争。
+        fun uniqueTransformName(): String = "proxy.preview.${java.util.UUID.randomUUID()}.json"
     }
 }
