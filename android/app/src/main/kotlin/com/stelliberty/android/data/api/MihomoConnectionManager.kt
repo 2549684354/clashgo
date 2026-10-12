@@ -14,14 +14,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class MihomoConnectionManager(scope: CoroutineScope) {
+class MihomoConnectionManager(
+    private val appVisible: StateFlow<Boolean>,
+    scope: CoroutineScope,
+) {
 
     private val _repository = MutableStateFlow<MihomoRepository?>(null)
     val repository: StateFlow<MihomoRepository?> = _repository.asStateFlow()
 
     private val mutex = Mutex()
     private var current: MihomoRepository? = null
-    private val coreLogs = CoreLogCollector(scope)
+    private val coreLogs = CoreLogCollector(scope, appVisible)
 
     init {
         scope.launch {

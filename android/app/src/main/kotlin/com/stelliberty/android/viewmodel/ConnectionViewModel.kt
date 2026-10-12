@@ -9,9 +9,12 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 @Immutable
@@ -24,7 +27,9 @@ data class ConnectionUiState(
     val error: String = "",
 )
 
-class ConnectionViewModel : ViewModel() {
+class ConnectionViewModel(
+    private val appVisible: StateFlow<Boolean>,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConnectionUiState())
     val uiState: StateFlow<ConnectionUiState> = _uiState.asStateFlow()
@@ -73,8 +78,13 @@ class ConnectionViewModel : ViewModel() {
         connectionJob?.cancel()
         val repo = repository ?: return
 
+        // 页面在看着（observing）还不够：整个应用退到后台时连接列表没人看，
+        // 全量连接 JSON 每秒一帧的推送纯属空转，灭后台即断 WS，回前台自动续上。
         connectionJob = viewModelScope.launch {
-            repo.connectionsFlow().collect { response ->
+            @OptIn(ExperimentalCoroutinesApi::class)
+            appVisible.flatMapLatest { visible ->
+                if (visible) repo.connectionsFlow() else emptyFlow()
+            }.collect { response ->
                 if (repository !== repo) return@collect
                 _uiState.value = _uiState.value.copy(
                     connections = response.connections.toPersistentList(),

@@ -8,17 +8,23 @@ import com.stelliberty.android.util.DiagnosticLogStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 class CoreLogCollector(
     private val scope: CoroutineScope,
+    private val appVisible: StateFlow<Boolean>,
     private val logs: DiagnosticLogStore = AppLogger.logs,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     private var repository: MihomoRepository? = null
     private var job: Job? = null
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Synchronized
     fun setRepository(repo: MihomoRepository?) {
         if (repository === repo) return
@@ -32,7 +38,16 @@ class CoreLogCollector(
                 val level = repo.getConfig()
                     .onFailure { AppLogger.warn("CoreLogCollector", "Failed to read core log level, using info", it) }
                     .getOrNull()?.logLevel ?: "info"
-                repo.logsFlow(level).collect { event ->
+                // 后台没有人在看诊断日志，内核 /logs 的每行推送照样是 WS 帧 + JSON 解析 + 环形缓冲
+                // 写入；应用不可见即断开订阅，回前台重新接上，connected 状态随之如实翻转。
+                appVisible.flatMapLatest { visible ->
+                    if (!visible) {
+                        logs.setCoreConnected(false)
+                        emptyFlow()
+                    } else {
+                        repo.logsFlow(level)
+                    }
+                }.collect { event ->
                     synchronized(this@CoreLogCollector) {
                         if (repository !== repo) return@collect
                         when (event) {

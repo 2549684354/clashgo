@@ -28,6 +28,7 @@ import com.stelliberty.android.data.api.MihomoConnectionManager
 import com.stelliberty.android.data.repository.ProfileProcessor
 import com.stelliberty.android.data.repository.SubscriptionProxyResolver
 import com.stelliberty.android.platform.AndroidWifiPolicy
+import com.stelliberty.android.platform.AppVisibilityMonitor
 import com.stelliberty.android.platform.BootStartManager
 import com.stelliberty.android.platform.FilePicker
 import com.stelliberty.android.platform.PlatformStorage
@@ -65,6 +66,7 @@ private const val STATE_DEEPLINK_NONCE = "deeplink_nonce"
 class MainActivity : ComponentActivity() {
 
     private lateinit var serviceController: ProxyServiceController
+    private lateinit var appVisibilityMonitor: AppVisibilityMonitor
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var subscriptionViewModel: SubscriptionViewModel
     private lateinit var proxyViewModel: ProxyViewModel
@@ -150,6 +152,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { profileProcessor.cleanupResidual() }
         IconDiskCache.init(this)
         serviceController = get()
+        appVisibilityMonitor = get()
         vpnPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -376,7 +379,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        homeViewModel.setForegroundVisible(true)
+        appVisibilityMonitor.setVisible(true)
     }
 
     override fun onDestroy() {
@@ -386,7 +389,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        homeViewModel.setForegroundVisible(false)
+        appVisibilityMonitor.setVisible(false)
     }
 
     private fun showQrToast(@StringRes resId: Int) {
