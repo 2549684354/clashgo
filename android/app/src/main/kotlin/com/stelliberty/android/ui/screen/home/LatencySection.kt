@@ -43,7 +43,8 @@ fun LazyListScope.latencySection(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
-                .padding(bottom = 6.dp),
+                .padding(bottom = 6.dp)
+                .cardShadow(HomeCardCornerRadius),
             insideMargin = PaddingValues(16.dp),
         ) {
             Row(

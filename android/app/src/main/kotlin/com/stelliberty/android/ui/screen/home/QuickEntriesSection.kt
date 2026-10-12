@@ -88,7 +88,7 @@ private fun QuickEntryCard(
     onClick: () -> Unit,
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.cardShadow(HomeCardCornerRadius),
         insideMargin = PaddingValues(16.dp),
         onClick = onClick,
         showIndication = isRunning,

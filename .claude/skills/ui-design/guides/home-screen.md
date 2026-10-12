@@ -1,5 +1,9 @@
 # 首页
 
+## 卡片阴影
+
+首页所有卡片（状态卡、概览四卡、快捷入口、延迟卡、系统卡）统一挂 `HomeShared.kt` 的 `Modifier.cardShadow(cornerRadius)`（8dp elevation 的 `Modifier.shadow`，shape 与卡片圆角一致：默认 16dp 用 `HomeCardCornerRadius`，12dp 的卡传 `12.dp`）。加在 padding 之后、`testTag` 之前，阴影落在卡片实际边界上。深色主题下黑影自然隐去，浅色主题提供「卡片浮在页面上」的体积感；miuix `Card` 无阴影参数，不要试图传 elevation，统一走这个助手。
+
 ## 状态卡
 
 - **中性底色 + 仪表布局**：顶部是状态圆点、状态文字和隧道模式；中部是运行时长与当前订阅；操作区与内核署名都在卡内底部。只有状态圆点带状态色，数据保持视觉主体。

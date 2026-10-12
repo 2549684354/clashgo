@@ -78,7 +78,7 @@ private fun SpeedCard(
     onClick: () -> Unit,
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.cardShadow(HomeCardCornerRadius),
         insideMargin = PaddingValues(0.dp),
         onClick = if (isRunning) onClick else null,
         showIndication = isRunning,
@@ -129,7 +129,7 @@ private fun SubscriptionCard(
     val progress = if (hasQuota) (used.toFloat() / total.toFloat()).coerceIn(0f, 1f) else 0f
 
     Card(
-        modifier = modifier,
+        modifier = modifier.cardShadow(HomeCardCornerRadius),
         insideMargin = PaddingValues(0.dp),
         onClick = if (isRunning) onClick else null,
         showIndication = isRunning,
