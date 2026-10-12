@@ -1,7 +1,6 @@
 package com.stelliberty.android.ui.screen.proxy
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -103,13 +102,8 @@ fun ProxyScreen(
         }
     }
     val sortOption = viewModel?.sortOption?.collectAsStateWithLifecycle()?.value ?: 0
-    val singleColumn = viewModel?.singleColumn?.collectAsStateWithLifecycle()?.value == true
+    val nodeColumns = viewModel?.nodeColumns?.collectAsStateWithLifecycle()?.value ?: 2
     val groupTabs = viewModel?.groupTabs?.collectAsStateWithLifecycle()?.value != false
-    val singleColumnProgress = animateFloatAsState(
-        targetValue = if (singleColumn) 1f else 0f,
-        animationSpec = tween(300),
-        label = "singleColumnProgress",
-    )
     val hideUnavailable = viewModel?.hideUnavailableNodes?.collectAsStateWithLifecycle()?.value == true
     val showGlobalGroup = viewModel?.showGlobalGroup?.collectAsStateWithLifecycle()?.value != false
     val cardDensity = viewModel?.cardDensity?.collectAsStateWithLifecycle()?.value ?: 0
@@ -316,13 +310,14 @@ fun ProxyScreen(
                                                 ),
                                             selected = false, enabled = true,
                                         ) { choiceMenu = 3 })
-                                        add(
-                                            MenuEntry(
-                                                text = stringResource(R.string.proxy_single_column),
-                                                selected = singleColumn,
-                                                enabled = true,
-                                            ) { viewModel?.updateSingleColumn(!singleColumn) },
-                                        )
+                                        add(MenuEntry(
+                                            text = "${stringResource(R.string.proxy_display)}: " +
+                                                stringResource(
+                                                    NODE_COLUMN_OPTIONS.firstOrNull { it.first == nodeColumns }
+                                                        ?.second ?: R.string.proxy_display_double,
+                                                ),
+                                            selected = false, enabled = true,
+                                        ) { choiceMenu = 4 })
                                         add(
                                             MenuEntry(
                                                 text = stringResource(R.string.proxy_hide_unavailable),
@@ -400,6 +395,21 @@ fun ProxyScreen(
                                                 )
                                             }
                                         }
+                                    } else if (choiceMenu == 4) {
+                                        ListPopupColumn {
+                                            NODE_COLUMN_OPTIONS.forEachIndexed { index, option ->
+                                                DropdownImpl(
+                                                    text = stringResource(option.second),
+                                                    optionSize = NODE_COLUMN_OPTIONS.size,
+                                                    isSelected = nodeColumns == option.first,
+                                                    index = index,
+                                                    onSelectedIndexChange = {
+                                                        viewModel?.updateNodeColumns(option.first)
+                                                        choiceMenu = 0
+                                                    },
+                                                )
+                                            }
+                                        }
                                     } else {
                                         val options = if (choiceMenu == 1) MODE_OPTIONS else TUN_STACK_OPTIONS
                                         val selected = if (choiceMenu == 1) mode else tunStack
@@ -458,13 +468,13 @@ fun ProxyScreen(
                     .associate { group ->
                         val rows = key(group.name) {
                             val relevantDelays = group.delays.takeIf { hideUnavailable || sortOption / 2 == 2 }
-                            remember(group.all, relevantDelays, query, sortOption, hideUnavailable) {
+                            remember(group.all, relevantDelays, query, sortOption, hideUnavailable, nodeColumns) {
                                 val trimmed = query.trim()
                                 val nodes = group.all.filter { name ->
                                     (!hideUnavailable || (group.delays[name] ?: 0) >= 0) &&
                                         (trimmed.isEmpty() || group.name.contains(trimmed, true) || name.contains(trimmed, true))
                                 }
-                                sortNodes(nodes, group.delays, sortOption).chunked(2)
+                                sortNodes(nodes, group.delays, sortOption).chunked(nodeColumns)
                                     .map { it.toPersistentList() }.toPersistentList()
                             }
                         }
@@ -595,7 +605,6 @@ fun ProxyScreen(
                                     ProxyNodeRow(
                                         row = rows[index],
                                         group = group,
-                                        singleColumnProgress = singleColumnProgress,
                                         testingNodes = uiState.testingNodes,
                                         density = ProxyCardDensity.entries[cardDensity],
                                         onTestNodeDelay = { viewModel?.testNodeDelay(it) },
@@ -628,6 +637,12 @@ private val CARD_DENSITY_OPTIONS = listOf(
     0 to R.string.proxy_card_density_compact,
     1 to R.string.proxy_card_density_standard,
     2 to R.string.proxy_card_density_relaxed,
+)
+
+private val NODE_COLUMN_OPTIONS = listOf(
+    1 to R.string.proxy_display_single,
+    2 to R.string.proxy_display_double,
+    3 to R.string.proxy_display_multi,
 )
 
 private val TUN_STACK_OPTIONS = listOf(

@@ -174,7 +174,10 @@
     <string name="proxy_mode_direct_hint">目前為直連模式，所有流量皆不經過代理。此處的選擇會被儲存，切回規則模式後生效。</string>
     <string name="proxy_mode_global_hint">目前為全域模式，僅由 GLOBAL 群組決定出口。其他代理群組的選擇將在切回規則模式後生效。</string>
     <string name="proxy_refresh_icon">重新整理圖示</string>
-    <string name="proxy_single_column">單欄顯示</string>
+    <string name="proxy_display">顯示</string>
+    <string name="proxy_display_single">單欄</string>
+    <string name="proxy_display_double">雙欄</string>
+    <string name="proxy_display_multi">多欄（三欄）</string>
     <string name="proxy_group_tabs">橫向切換代理群組</string>
     <string name="proxy_card_density">節點卡片尺寸</string>
     <string name="proxy_card_density_compact">緊湊</string>

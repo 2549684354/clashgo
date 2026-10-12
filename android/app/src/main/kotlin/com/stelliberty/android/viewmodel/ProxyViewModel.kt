@@ -87,8 +87,9 @@ class ProxyViewModel(
     private val _sortOption = MutableStateFlow(loadInitialSortOption())
     val sortOption: StateFlow<Int> = _sortOption.asStateFlow()
 
-    private val _singleColumn = MutableStateFlow(loadInitialSingleColumn())
-    val singleColumn: StateFlow<Boolean> = _singleColumn.asStateFlow()
+    // 节点每行列数：1 单列 / 2 双列（默认）/ 3 多列。
+    private val _nodeColumns = MutableStateFlow(loadInitialNodeColumns())
+    val nodeColumns: StateFlow<Int> = _nodeColumns.asStateFlow()
 
     private val _groupTabs = MutableStateFlow(
         storage?.getString(StorageKeys.PROXY_GROUP_TABS, "true") != "false",
@@ -163,13 +164,19 @@ class ProxyViewModel(
     private fun loadInitialSortOption(): Int =
         storage?.getString(StorageKeys.PROXY_NODE_SORT_OPTION, "0")?.toIntOrNull() ?: 0
 
-    fun updateSingleColumn(enabled: Boolean) {
-        _singleColumn.value = enabled
-        storage?.putString(StorageKeys.PROXY_NODE_SINGLE_COLUMN, if (enabled) "true" else "false")
+    fun updateNodeColumns(columns: Int) {
+        val clamped = columns.coerceIn(1, 3)
+        _nodeColumns.value = clamped
+        storage?.putString(StorageKeys.PROXY_NODE_COLUMNS, clamped.toString())
     }
 
-    private fun loadInitialSingleColumn(): Boolean =
-        storage?.getString(StorageKeys.PROXY_NODE_SINGLE_COLUMN, "false") == "true"
+    // 旧版只存「单列开关」，true 迁移为单列，false 即默认双列。
+    private fun loadInitialNodeColumns(): Int {
+        storage?.getString(StorageKeys.PROXY_NODE_COLUMNS, "")?.toIntOrNull()
+            ?.takeIf { it in 1..3 }
+            ?.let { return it }
+        return if (storage?.getString(StorageKeys.PROXY_NODE_SINGLE_COLUMN, "false") == "true") 1 else 2
+    }
 
     fun updateHideUnavailableNodes(enabled: Boolean) {
         _hideUnavailableNodes.value = enabled

@@ -26,7 +26,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -274,7 +273,6 @@ internal enum class ProxyCardDensity(
 internal fun ProxyNodeRow(
     row: ImmutableList<String>,
     group: ProxyGroupUi,
-    singleColumnProgress: State<Float>,
     testingNodes: ImmutableSet<String>,
     density: ProxyCardDensity,
     onTestNodeDelay: (String) -> Unit,
@@ -300,22 +298,17 @@ internal fun ProxyNodeRow(
             }
         },
     ) { measurables, constraints ->
-        val fraction = singleColumnProgress.value
         val gap = 10.dp.roundToPx()
-        val halfWidth = (constraints.maxWidth - gap) / 2
-        val cellWidth = lerp(halfWidth, constraints.maxWidth, fraction)
+        val cellWidth = (constraints.maxWidth - gap * (measurables.size - 1)) / measurables.size
         val placeables = measurables.map {
             it.measure(constraints.copy(minWidth = cellWidth, maxWidth = cellWidth, minHeight = 0))
         }
-        val first = placeables.first()
-        val second = placeables.getOrNull(1)
-        val secondX = lerp(halfWidth + gap, 0, fraction)
-        val secondY = lerp(0, first.height + gap, fraction)
         // 行始终占完整高度；从零高度展开会让懒列表在首帧组合整组节点。
-        val height = maxOf(first.height, if (second != null) secondY + second.height else 0)
+        val height = placeables.maxOf { it.height }
         layout(constraints.maxWidth, height) {
-            first.placeRelative(0, 0)
-            second?.placeRelative(secondX, secondY)
+            placeables.forEachIndexed { index, placeable ->
+                placeable.placeRelative(index * (cellWidth + gap), 0)
+            }
         }
     }
 }
