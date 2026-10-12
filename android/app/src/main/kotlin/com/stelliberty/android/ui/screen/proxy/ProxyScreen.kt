@@ -345,7 +345,8 @@ fun ProxyScreen(
                                     }
                                     ListPopupColumn {
                                         entries.forEachIndexed { index, entry ->
-                                            if (index == 3) {
+                                            // 分隔线划在选路行为（模式/TUN 栈）与显示偏好之间：组布局属于显示项。
+                                            if (index == 2) {
                                                 HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
                                             }
                                             val tag = when (index) {

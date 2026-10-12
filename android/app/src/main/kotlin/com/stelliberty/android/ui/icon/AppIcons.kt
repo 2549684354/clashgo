@@ -13,7 +13,6 @@ object AppIcons {
     val ChevronRight: ImageVector get() = MingCuteRightSmall
     val Close: ImageVector get() = MingCuteClose
     val Delete: ImageVector get() = MingCuteDelete2
-    val HotReload: ImageVector get() = MingCuteFlame
     val Info: ImageVector get() = MingCuteInformation
     val More: ImageVector get() = MingCuteMore1
     val MoveDown: ImageVector get() = MingCuteDownSmall
@@ -29,7 +28,6 @@ object AppIcons {
     val Pin: ImageVector get() = MingCutePin
     val Play: ImageVector get() = MingCutePlayCircle
     val Refresh: ImageVector get() = MingCuteRefresh2
-    val Restart: ImageVector get() = MingCuteRefresh1
     val Restore: ImageVector get() = MingCuteDownload
     val Search: ImageVector get() = MingCuteSearch
     val SearchCleanup: ImageVector get() = MingCuteCloseCircle

@@ -1,8 +1,8 @@
 package com.stelliberty.android.util
 
-import java.io.BufferedWriter
+import java.io.BufferedOutputStream
 import java.io.File
-import java.io.FileWriter
+import java.io.FileOutputStream
 import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 
@@ -14,15 +14,17 @@ class FileLogStore(
     private val maxSizeBytes: Long = MAX_LOG_SIZE_BYTES,
 ) {
     private val lock = Any()
-    private var writer: BufferedWriter? = null
+    private var writer: BufferedOutputStream? = null
     private var pendingBytes = 0
     private var firstPendingAt = 0L
 
     fun append(line: String) = synchronized(lock) {
         val out = ensureWriter()
-        out.write(line)
-        out.write("\n")
-        pendingBytes += line.toByteArray(StandardCharsets.UTF_8).size + 1
+        // 同一份编码既用于写出也用于计数：只为取长度再编码一次，会在热路径上多分配一份数组。
+        val bytes = line.toByteArray(StandardCharsets.UTF_8)
+        out.write(bytes)
+        out.write('\n'.code)
+        pendingBytes += bytes.size + 1
         if (firstPendingAt == 0L) firstPendingAt = System.currentTimeMillis()
         val now = System.currentTimeMillis()
         if (pendingBytes >= FLUSH_PENDING_BYTES || now - firstPendingAt >= FLUSH_INTERVAL_MS) {
@@ -47,11 +49,11 @@ class FileLogStore(
         if (logFile.exists()) logFile.writeText("")
     }
 
-    private fun ensureWriter(): BufferedWriter {
+    private fun ensureWriter(): BufferedOutputStream {
         writer?.let { return it }
         logFile.parentFile?.mkdirs()
-        val raw = FileWriter(logFile, /* append = */ true)
-        return BufferedWriter(raw, WRITE_BUFFER_BYTES).also { writer = it }
+        val raw = FileOutputStream(logFile, /* append = */ true)
+        return BufferedOutputStream(raw, WRITE_BUFFER_BYTES).also { writer = it }
     }
 
     // 调用方必须已持有 lock。

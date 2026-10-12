@@ -242,6 +242,8 @@ private fun StopButton(onStop: () -> Unit) {
 private fun GelButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    // 过渡期（启动中/停止中）的设计是按钮维持原样、点击不响应，因此当前调用点都不传 enabled=false；
+    // enabled 与两个 disabled 颜色参数是为将来需要真正禁用态（变灰不可点）预留的，先保留。
     enabled: Boolean = true,
     containerColor: Color,
     disabledContainerColor: Color,
