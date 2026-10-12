@@ -91,11 +91,9 @@ fun LazyListScope.systemCardsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
+                    CardTitle(
+                        icon = AppIcons.NavProxy,
                         text = "IP",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MiuixTheme.colorScheme.onSurface,
                     )
                     BadgeLabel(ipCategory(address).label, StatusColors.neutral)
                 }
@@ -115,11 +113,9 @@ fun LazyListScope.systemCardsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
+                    CardTitle(
+                        icon = AppIcons.NavHome,
                         text = stringResource(R.string.home_system),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MiuixTheme.colorScheme.onSurface,
                     )
                     BadgeLabel("SYS", StatusColors.neutral)
                 }

@@ -101,11 +101,9 @@ private fun SpeedCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
+                    CardTitle(
+                        icon = AppIcons.Wifi,
                         text = stringResource(R.string.home_speed),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MiuixTheme.colorScheme.onSurface
                     )
                     // 概览四卡的徽标统一走中性色：卡片自身的曲线/用量条已经承担状态表达，
                     // 徽标只负责标注类别，五颜六色反而显乱。
@@ -155,11 +153,9 @@ private fun SubscriptionCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
+                    CardTitle(
+                        icon = AppIcons.NavSubscription,
                         text = stringResource(R.string.home_subscription),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MiuixTheme.colorScheme.onSurface,
                     )
                     BadgeLabel(
                         text = if (hasQuota) "${(progress * 100).roundToInt()}%" else "SUB",

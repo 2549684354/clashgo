@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +45,7 @@ fun LazyListScope.quickEntriesSection(
             ) {
                 QuickEntryCard(
                     modifier = Modifier.weight(1f),
+                    icon = AppIcons.Restore,
                     title = stringResource(R.string.home_providers),
                     subtitle = stringResource(R.string.home_providers_subtitle),
                     isRunning = isRunning,
@@ -51,6 +53,7 @@ fun LazyListScope.quickEntriesSection(
                 )
                 QuickEntryCard(
                     modifier = Modifier.weight(1f),
+                    icon = AppIcons.SubscriptionLink,
                     title = stringResource(R.string.home_connections),
                     subtitle = stringResource(R.string.home_connections_subtitle),
                     isRunning = isRunning,
@@ -63,6 +66,7 @@ fun LazyListScope.quickEntriesSection(
             ) {
                 QuickEntryCard(
                     modifier = Modifier.weight(1f),
+                    icon = AppIcons.SubscriptionFile,
                     title = stringResource(R.string.home_logs),
                     subtitle = stringResource(R.string.home_logs_subtitle),
                     isRunning = isRunning,
@@ -70,6 +74,7 @@ fun LazyListScope.quickEntriesSection(
                 )
                 QuickEntryCard(
                     modifier = Modifier.weight(1f),
+                    icon = AppIcons.Search,
                     title = stringResource(R.string.home_dns),
                     subtitle = stringResource(R.string.home_dns_subtitle),
                     isRunning = isRunning,
@@ -79,6 +84,7 @@ fun LazyListScope.quickEntriesSection(
             // 热重载是运维动作，从状态卡挪到这里：改完配置/更新完订阅后来这一下让内核生效。
             QuickEntryCard(
                 modifier = Modifier.fillMaxWidth(),
+                icon = AppIcons.Refresh,
                 title = stringResource(R.string.home_reload),
                 subtitle = stringResource(R.string.home_reload_subtitle),
                 isRunning = isRunning,
@@ -91,6 +97,7 @@ fun LazyListScope.quickEntriesSection(
 @Composable
 private fun QuickEntryCard(
     modifier: Modifier = Modifier,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     isRunning: Boolean,
@@ -103,11 +110,10 @@ private fun QuickEntryCard(
         showIndication = isRunning,
         pressFeedbackType = if (isRunning) PressFeedbackType.Sink else PressFeedbackType.None,
     ) {
-        Text(
+        CardTitle(
+            icon = icon,
             text = title,
             fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            color = MiuixTheme.colorScheme.onSurface,
         )
         Text(
             text = subtitle,

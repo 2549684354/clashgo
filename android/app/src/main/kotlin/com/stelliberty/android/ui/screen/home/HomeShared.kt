@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.Icon
@@ -55,6 +56,31 @@ internal fun BadgeLabel(text: String, color: Color = MiuixTheme.colorScheme.prim
 }
 
 private const val BadgeContainerAlpha = 0.16f
+
+// 首页卡片标题行：icon 与文字同色（onSurface），供概览/系统/工具卡共用。
+@Composable
+internal fun CardTitle(
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 14.sp,
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MiuixTheme.colorScheme.onSurface,
+            modifier = Modifier.size(15.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = text,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Medium,
+            color = MiuixTheme.colorScheme.onSurface,
+        )
+    }
+}
 
 // 首页分区标题：icon 与文字同色同排。样式复刻 miuix SmallTitle（subtitle 字号 + 其默认
 // insideMargin 28/8），只是把无前缀的纯文本换成「icon + 文字」，保证各分区观感一致。
