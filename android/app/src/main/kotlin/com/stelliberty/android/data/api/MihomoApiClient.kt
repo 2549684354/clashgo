@@ -99,9 +99,11 @@ class MihomoApiClient(
         ensureSuccess(response, "proxy group '$group'")
     }
 
-    // 测速失败时内核回的是 404 / 503 / 504 加一段 message，这里必须按状态码判成失败：
-    // 那种响应体解析成 DelayResult 会得到 delay=0，跟「真的 0 毫秒」再也分不开。
-    suspend fun getProxyDelay(name: String, testUrl: String = "http://www.gstatic.com/generate_204", timeout: Int = 5000): DelayResult {
+    // 测速端点选 Cloudflare 的 204：与内置订阅常见的 CF 落地节点同源，测出来的数字不会
+    // 因为探测站选得远而虚高。测速失败时内核回的是 404 / 503 / 504 加一段 message，
+    // 这里必须按状态码判成失败：那种响应体解析成 DelayResult 会得到 delay=0，
+    // 跟「真的 0 毫秒」再也分不开。
+    suspend fun getProxyDelay(name: String, testUrl: String = "http://cp.cloudflare.com/generate_204", timeout: Int = 5000): DelayResult {
         val response = client.get(endpoint("proxies", name, "delay")) {
             url {
                 parameters.append("url", testUrl)
@@ -117,7 +119,7 @@ class MihomoApiClient(
     suspend fun getProviderProxyDelay(
         provider: String,
         name: String,
-        testUrl: String = "http://www.gstatic.com/generate_204",
+        testUrl: String = "http://cp.cloudflare.com/generate_204",
         timeout: Int = 5000,
     ): DelayResult {
         val response = client.get(endpoint("providers", "proxies", provider, name, "healthcheck")) {

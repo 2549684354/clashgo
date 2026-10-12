@@ -34,14 +34,14 @@ interface MihomoRepository {
     suspend fun unfixProxy(group: String): Result<Unit>
     suspend fun getProxyDelay(
         name: String,
-        testUrl: String = "http://www.gstatic.com/generate_204",
+        testUrl: String = "http://cp.cloudflare.com/generate_204",
         timeout: Int = 5000,
     ): Result<DelayResult>
 
     suspend fun getProviderProxyDelay(
         provider: String,
         name: String,
-        testUrl: String = "http://www.gstatic.com/generate_204",
+        testUrl: String = "http://cp.cloudflare.com/generate_204",
         timeout: Int = 5000,
     ): Result<DelayResult>
 

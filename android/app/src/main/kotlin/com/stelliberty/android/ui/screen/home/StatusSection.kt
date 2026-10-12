@@ -1,5 +1,6 @@
 package com.stelliberty.android.ui.screen.home
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,11 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -249,10 +252,18 @@ private fun StatusActionArea(
 
 @Composable
 private fun StartButton(onStart: () -> Unit) {
+    // 立体感来自投影 + 描边：实色大胶囊本身已有分量，投出与主色同源柔和阴影即可「浮」起来。
     Button(
         onClick = onStart,
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = StartButtonShadow,
+                shape = RoundedCornerShape(StartButtonRadius),
+                ambientColor = MiuixTheme.colorScheme.primary,
+                spotColor = MiuixTheme.colorScheme.primary,
+            )
+            .border(1.dp, MiuixTheme.colorScheme.primary.copy(alpha = StartButtonBorderAlpha), RoundedCornerShape(StartButtonRadius))
             .testTag(TestTags.Home.START),
         cornerRadius = StartButtonRadius,
         minHeight = StartButtonHeight,
@@ -286,12 +297,22 @@ private fun ActionPill(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    // 半透明色块平贴在卡片上没有体积感：同色描边收拢轮廓，同色调投影把它从卡面托起，
+    // 再把底色浓度提一档，三枚胶囊就与主按钮同处一个「浮雕层」。
     TextButton(
         text = text,
         onClick = onClick,
-        modifier = modifier.then(
-            if (tag != null) Modifier.testTag(tag) else Modifier,
-        ),
+        modifier = modifier
+            .shadow(
+                elevation = ActionPillShadow,
+                shape = RoundedCornerShape(ActionPillRadius),
+                ambientColor = tint,
+                spotColor = tint,
+            )
+            .border(1.dp, tint.copy(alpha = PillBorderAlpha), RoundedCornerShape(ActionPillRadius))
+            .then(
+                if (tag != null) Modifier.testTag(tag) else Modifier,
+            ),
         enabled = enabled,
         minHeight = ActionPillHeight,
         cornerRadius = ActionPillRadius,
@@ -325,7 +346,15 @@ private const val NO_VALUE = "--"
 
 private const val ProgressTrackAlpha = 0.24f
 
-private const val PillContainerAlpha = 0.18f
+private const val PillContainerAlpha = 0.22f
+
+private const val PillBorderAlpha = 0.32f
+
+private const val StartButtonBorderAlpha = 0.4f
+
+private val ActionPillShadow = 3.dp
+
+private val StartButtonShadow = 5.dp
 
 private const val DisabledContentAlpha = 0.5f
 
