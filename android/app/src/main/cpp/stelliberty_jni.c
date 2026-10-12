@@ -21,7 +21,7 @@ static jstring go_cstr_to_jstring(JNIEnv *env, char *s) {
 }
 
 JNIEXPORT void JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeCoreInit(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeCoreInit(
         JNIEnv *env, jclass clazz, jstring jHomeDir) {
     char *homeDir = jstring_to_cstr(env, jHomeDir);
     stellibertyCoreInit(homeDir ? homeDir : "");
@@ -29,7 +29,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeCoreInit(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeFetchAndValid(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeFetchAndValid(
         JNIEnv *env, jclass clazz,
         jstring jWorkDir, jstring jUrl, jboolean jForce, jstring jHttpProxy, jstring jUserAgent,
         jint jToken) {
@@ -55,20 +55,20 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeFetchAndValid(
 }
 
 JNIEXPORT void JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeCancel(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeCancel(
         JNIEnv *env, jclass clazz, jint jToken) {
     stellibertyCancel((int) jToken);
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeQueryProgress(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeQueryProgress(
         JNIEnv *env, jclass clazz, jint jToken) {
     char *progress = stellibertyQueryProgress((int) jToken);
     return go_cstr_to_jstring(env, progress);
 }
 
 JNIEXPORT void JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeSetAgeSecretKey(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeSetAgeSecretKey(
         JNIEnv *env, jclass clazz, jstring jKey) {
     char *key = jstring_to_cstr(env, jKey);
     stellibertySetAgeSecretKey(key ? key : "");
@@ -76,7 +76,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeSetAgeSecretKey
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeExtractXzAsset(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeExtractXzAsset(
         JNIEnv *env, jclass clazz, jstring jApk, jstring jEntry, jstring jTarget) {
     char *apk = jstring_to_cstr(env, jApk);
     char *entry = jstring_to_cstr(env, jEntry);
@@ -89,7 +89,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeExtractXzAsset(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeDecryptFile(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeDecryptFile(
         JNIEnv *env, jclass clazz, jstring jSource, jstring jTarget, jstring jKey) {
     char *source = jstring_to_cstr(env, jSource);
     char *target = jstring_to_cstr(env, jTarget);
@@ -102,7 +102,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeDecryptFile(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeValidateTransform(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeValidateTransform(
         JNIEnv *env, jclass clazz, jstring jWorkDir, jstring jTransform, jstring jKey) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
     char *transform = jstring_to_cstr(env, jTransform);
@@ -115,7 +115,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeValidateTransfo
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeChainProxyContext(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeChainProxyContext(
         JNIEnv *env, jclass clazz, jstring jWorkDir, jstring jTransform, jstring jKey) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
     char *transform = jstring_to_cstr(env, jTransform);
@@ -128,7 +128,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeChainProxyConte
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeRuleContext(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeRuleContext(
         JNIEnv *env, jclass clazz, jstring jWorkDir, jstring jTransform, jstring jKey) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
     char *transform = jstring_to_cstr(env, jTransform);
@@ -141,7 +141,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeRuleContext(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeProxyPreview(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeProxyPreview(
         JNIEnv *env, jclass clazz, jstring jWorkDir, jstring jTransform, jstring jKey) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
     char *transform = jstring_to_cstr(env, jTransform);
@@ -154,7 +154,7 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeProxyPreview(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeProxyNodeDelay(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeProxyNodeDelay(
         JNIEnv *env, jclass clazz,
         jstring jWorkDir, jstring jTransform, jstring jKey, jstring jNode, jint jTimeout) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
@@ -175,14 +175,14 @@ Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeProxyNodeDelay(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeGenAgeKeyPair(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeGenAgeKeyPair(
         JNIEnv *env, jclass clazz) {
     char *result = stellibertyGenAgeKeyPair();
     return go_cstr_to_jstring(env, result);
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_stelliberty_android_data_bridge_ClashGoCoreBridge_nativeGenAgeHybridKeyPair(
+Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeGenAgeHybridKeyPair(
         JNIEnv *env, jclass clazz) {
     char *result = stellibertyGenAgeHybridKeyPair();
     return go_cstr_to_jstring(env, result);
