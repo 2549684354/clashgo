@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="Theme.Stelliberty" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.ClashGo" parent="android:Theme.Material.NoActionBar">
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:colorAccent">#1A3825</item>

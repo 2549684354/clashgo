@@ -285,7 +285,8 @@ androidComponents {
 }
 
 base {
+    // 显示名带空格，产物文件名去掉空格保持简洁。
     archivesName.set(
-        "${ProjectConfig.APP_NAME}-v${appVersionName}",
+        "${ProjectConfig.APP_NAME.replace(" ", "")}-v${appVersionName}",
     )
 }

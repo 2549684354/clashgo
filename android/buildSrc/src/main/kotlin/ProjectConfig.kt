@@ -1,6 +1,6 @@
 object ProjectConfig {
-    const val APP_NAME = "Stelliberty"
-    const val PACKAGE_NAME = "com.stelliberty.android"
+    const val APP_NAME = "Clash Go"
+    const val PACKAGE_NAME = "com.clashgo.android"
     const val VERSION_NAME = "1.1.1"
 
     object Android {

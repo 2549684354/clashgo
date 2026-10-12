@@ -20,19 +20,19 @@
         tools:ignore="PackageVisibilityPolicy" />
 
     <application
-        android:name=".StellibertyApplication"
+        android:name=".ClashGoApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Stelliberty">
+        android:theme="@style/Theme.ClashGo">
 
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.Stelliberty"
+            android:theme="@style/Theme.ClashGo"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -48,7 +48,7 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
-            android:theme="@style/Theme.Stelliberty.Transparent">
+            android:theme="@style/Theme.ClashGo.Transparent">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -66,11 +66,11 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:excludeFromRecents="true"
             android:exported="false"
-            android:theme="@style/Theme.Stelliberty.Transparent"
+            android:theme="@style/Theme.ClashGo.Transparent"
             android:windowSoftInputMode="adjustResize" />
 
         <service
-            android:name=".service.StellibertyTunService"
+            android:name=".service.ClashGoTunService"
             android:exported="false"
             android:foregroundServiceType="specialUse"
             android:permission="android.permission.BIND_VPN_SERVICE"
@@ -84,7 +84,7 @@
         </service>
 
         <service
-            android:name=".service.StellibertyRootService"
+            android:name=".service.ClashGoRootService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
@@ -93,7 +93,7 @@
         </service>
 
         <service
-            android:name=".service.StellibertyTileService"
+            android:name=".service.ClashGoTileService"
             android:exported="true"
             android:icon="@drawable/ic_tile"
             android:label="@string/app_name"
@@ -127,7 +127,7 @@
                 <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
             <intent-filter>
-                <action android:name="com.stelliberty.android.action.PROFILE_REQUEST_UPDATE" />
+                <action android:name="com.clashgo.android.action.PROFILE_REQUEST_UPDATE" />
                 <data android:scheme="uuid" />
             </intent-filter>
         </receiver>

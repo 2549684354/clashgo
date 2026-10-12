@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""编译 Stelliberty，默认 release，--dev 选择 debug，APK 保存到 build/apk。"""
+"""编译 Clash Go，默认 release，--dev 选择 debug，APK 保存到 build/apk。"""
 import os
 import sys
 
@@ -179,7 +179,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser = argparse.ArgumentParser(
         prog="stelliberty-build",
-        description="Compile Stelliberty; defaults to a release APK.",
+        description="Compile Clash Go; defaults to a release APK.",
         epilog="Development build: python scripts/build.py --dev",
         parents=[common, build_options],
     )

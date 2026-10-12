@@ -1,13 +1,13 @@
 <resources>
 
-    <style name="Theme.Stelliberty" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.ClashGo" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowLightStatusBar">true</item>
         <!-- 冷启动窗口底色与 App 浅色界面对齐，消除系统启动屏到首帧之间的白闪。 -->
         <item name="android:windowBackground">#F6F6F6</item>
         <item name="android:windowSplashScreenBackground">#F6F6F6</item>
     </style>
 
-    <style name="Theme.Stelliberty.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+    <style name="Theme.ClashGo.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
