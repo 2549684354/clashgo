@@ -253,7 +253,9 @@ private fun AboutContent(
                                 )
                             } else Modifier
                         ),
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    // 前景整图带渐变底，tint 单色会糊成色块；这里要的是白色剪影（ic_launcher_monochrome）
+                    // 被染成主题色后的效果。
+                    painter = painterResource(R.drawable.ic_launcher_monochrome),
                     colorFilter = ColorFilter.tint(colorScheme.onBackground),
                     // 紧挨着下面就是应用名，读屏再念一遍图标属于噪音。
                     contentDescription = null,
@@ -280,7 +282,7 @@ private fun AboutContent(
                             )
                         } else Modifier
                     ),
-                text = "ClashGo",
+                text = stringResource(R.string.app_name),
                 color = colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 fontSize = 35.sp,
