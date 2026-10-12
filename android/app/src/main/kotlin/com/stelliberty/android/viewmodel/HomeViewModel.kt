@@ -98,9 +98,11 @@ data class SpeedSnapshot(
     val history: TrafficHistory = TrafficHistory(),
 )
 
+// 延迟探测一律用 204 空响应端点：完整页面（如 www.cloudflare.com/cdn-cgi/trace）的
+// 传输与解析都会把数字抬高，204 只衡量往返耗时，站点之间才有可比性。
 enum class LatencyProbe(val url: String) {
     Baidu("http://www.baidu.com"),
-    Cloudflare("http://www.cloudflare.com/cdn-cgi/trace"),
+    Cloudflare("http://cp.cloudflare.com/generate_204"),
     Google("http://www.google.com/generate_204"),
 }
 
@@ -220,7 +222,7 @@ class HomeViewModel(
 
                     // 这两个分支整体重建状态来清掉运行期的热数据，因此每个要留下的字段都得显式带上。
                     // tunMode 漏了就退回构造默认的 VPN，用户选着 ROOT 却在首页看到 VPN；
-                    // version 漏了内核署名就会在停止后丢掉版本号（构建期注入的值不会变）。
+                    // version 漏了标题下的内核版本就会在停止后消失（构建期注入的值不会变）。
                     ProxyState.Stopped -> {
                         _uiState.value = HomeUiState(
                             mode = persistedMode(),
@@ -718,6 +720,15 @@ class HomeViewModel(
                     _uiState.value = _uiState.value.copy(latencyViaRules = false)
                     return@launch
                 }
+                val exitJob = async {
+                    // 出口信息与延迟无关，单独抓一次 trace：ip= 是出口 IP，loc= 是国家/地区码。
+                    var trace = latencyTester.probe(EXIT_PROBE_URL, endpoint, LATENCY_TIMEOUT_MILLIS)
+                    if (trace == null) {
+                        delay(PROBE_RETRY_DELAY)
+                        trace = latencyTester.probe(EXIT_PROBE_URL, endpoint, LATENCY_TIMEOUT_MILLIS)
+                    }
+                    if (trace == null) clearExitInfo() else applyExitInfo(trace.body)
+                }
                 val viaRules = LatencyProbe.entries.map { probe ->
                     async {
                         var result = latencyTester.probe(probe.url, endpoint, LATENCY_TIMEOUT_MILLIS)
@@ -728,15 +739,14 @@ class HomeViewModel(
                         }
                         if (result == null) {
                             applyLatency(probe, -1)
-                            if (probe == LatencyProbe.Cloudflare) clearExitInfo()
                             false
                         } else {
-                            if (probe == LatencyProbe.Cloudflare) applyExitInfo(result.body)
                             applyLatency(probe, result.delay)
                             true
                         }
                     }
                 }.awaitAll()
+                exitJob.await()
                 _uiState.value = _uiState.value.copy(latencyViaRules = viaRules.all { it })
             } finally {
                 if (generation == latencyGeneration) {
@@ -753,7 +763,7 @@ class HomeViewModel(
         return latencyTester.resolveEndpoint()
     }
 
-    // Cloudflare trace 的响应体自带出口信息：ip= 是代理出口 IP，colo= 是落地机房代码。
+    // trace 的响应体自带出口信息：ip= 是代理出口 IP，loc= 是落地国家/地区码（界面转成国旗）。
     private fun applyExitInfo(body: String) {
         val ip = EXIT_IP_REGEX.find(body)?.groupValues?.get(1).orEmpty()
         val region = EXIT_REGION_REGEX.find(body)?.groupValues?.get(1).orEmpty()
@@ -801,7 +811,9 @@ class HomeViewModel(
 
         private val EXIT_IP_REGEX = Regex("^ip=(.+)$", RegexOption.MULTILINE)
 
-        private val EXIT_REGION_REGEX = Regex("^colo=(.+)$", RegexOption.MULTILINE)
+        private val EXIT_REGION_REGEX = Regex("^loc=(.+)$", RegexOption.MULTILINE)
+
+        private const val EXIT_PROBE_URL = "http://www.cloudflare.com/cdn-cgi/trace"
 
         private const val TOP_CONNECTION_COUNT = 5
     }
