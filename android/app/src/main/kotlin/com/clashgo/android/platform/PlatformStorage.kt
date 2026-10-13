@@ -69,7 +69,8 @@ object StorageKeys {
 
     const val PROXY_HIDE_UNAVAILABLE_NODES = "proxy_hide_unavailable_nodes"
 
-    const val PROXY_CARD_DENSITY = "proxy_card_density"
+    // 默认密度从紧凑改为标准后换 key，让已写入 "0" 的旧设备也落到新默认。
+    const val PROXY_CARD_DENSITY = "proxy_card_density_default_standard"
 
     const val DARK_MODE = "dark_mode"
     const val THEME_PURE_BLACK = "theme_pure_black"

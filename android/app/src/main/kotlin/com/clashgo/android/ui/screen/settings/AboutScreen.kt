@@ -328,7 +328,7 @@ private fun AboutContent(
                             // 主列表只放本项目与内核两个直接依赖，其余许可统一收进「更多」页。
                             val ossProjects = remember(mihomoVersion) {
                                 listOf(
-                                    "ClashGo" to "https://github.com/2549684354/stelliberty_android",
+                                    "Clash Go" to "https://github.com/2549684354/clashgo",
                                     (if (mihomoVersion.isNotEmpty()) "mihomo ($mihomoVersion)" else "mihomo") to "https://github.com/MetaCubeX/mihomo",
                                 )
                             }

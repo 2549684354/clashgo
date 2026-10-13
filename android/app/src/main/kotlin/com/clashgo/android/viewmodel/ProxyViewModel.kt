@@ -163,6 +163,18 @@ class ProxyViewModel(
         storage?.putString(StorageKeys.PROXY_NODE_SORT_OPTION, option.toString())
     }
 
+    // 排序方式不跨订阅继承：订阅归属变化时回到默认排序（排序持久的只有组内顺序，与订阅无关）。
+    private var sortOptionOwner: String? = null
+
+    private fun resetSortIfSubscriptionChanged(uuid: String?) {
+        if (sortOptionOwner == uuid) return
+        sortOptionOwner = uuid
+        if (_sortOption.value != 0) {
+            _sortOption.value = 0
+            storage?.putString(StorageKeys.PROXY_NODE_SORT_OPTION, "0")
+        }
+    }
+
     private fun loadInitialSortOption(): Int =
         storage?.getString(StorageKeys.PROXY_NODE_SORT_OPTION, "0")?.toIntOrNull() ?: 0
 
@@ -195,7 +207,7 @@ class ProxyViewModel(
     }
 
     private fun loadInitialCardDensity(): Int =
-        storage?.getString(StorageKeys.PROXY_CARD_DENSITY, "0")?.toIntOrNull()?.coerceIn(0, 2) ?: 0
+        storage?.getString(StorageKeys.PROXY_CARD_DENSITY, "1")?.toIntOrNull()?.coerceIn(0, 2) ?: 1
 
     fun updateShowGlobalGroup(enabled: Boolean) {
         _showGlobalGroup.value = enabled
@@ -269,6 +281,7 @@ class ProxyViewModel(
     private fun loadPreview(uuid: String? = null) {
         val repository = previewRepository ?: return
         val id = uuid ?: getActiveUuid() ?: return
+        resetSortIfSubscriptionChanged(id)
         previewJob?.cancel()
         previewJob = viewModelScope.launch {
             val preview = repository.load(id) ?: return@launch
@@ -326,6 +339,7 @@ class ProxyViewModel(
     }
 
     private suspend fun loadProxies(current: Session) = coroutineScope {
+        resetSortIfSubscriptionChanged(getActiveUuid())
         val groupsDeferred = async { current.repository.getGroups() }
         val proxiesDeferred = async { current.repository.getProxies() }
         val providersDeferred = async { current.repository.getProviders() }

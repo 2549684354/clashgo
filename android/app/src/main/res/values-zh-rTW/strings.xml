@@ -312,6 +312,8 @@
     <string name="provider_update_failed">更新 %1$s 失敗: %2$s</string>
 
     <!-- Settings -->
+    <string name="settings_search_hint">搜尋設定</string>
+    <string name="settings_search_no_results">沒有匹配的設定</string>
     <string name="settings_title">設定</string>
     <string name="settings_group_automation">自動化</string>
     <string name="settings_group_personalization">個人化</string>
@@ -424,6 +426,7 @@
     <string name="settings_hide_task_card_summary">在最近使用清單中隱藏任務卡片</string>
     <string name="settings_app_log_summary">寫入應用程式日誌的最低等級</string>
     <string name="settings_about">關於</string>
+    <string name="settings_about_summary">版本、更新與開源許可</string>
 
     <!-- VPN Settings -->
     <string name="vpn_settings_title">VPN 設定</string>

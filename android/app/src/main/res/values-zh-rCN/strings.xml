@@ -312,6 +312,8 @@
     <string name="provider_update_failed">更新 %1$s 失败: %2$s</string>
 
     <!-- Settings -->
+    <string name="settings_search_hint">搜索设置</string>
+    <string name="settings_search_no_results">没有匹配的设置</string>
     <string name="settings_title">设置</string>
     <string name="settings_group_automation">自动化</string>
     <string name="settings_group_personalization">个性化</string>
@@ -424,6 +426,7 @@
     <string name="settings_hide_task_card_summary">在最近任务中隐藏任务卡片</string>
     <string name="settings_app_log_summary">写入应用日志的最低等级</string>
     <string name="settings_about">关于</string>
+    <string name="settings_about_summary">版本、更新与开源许可</string>
 
     <!-- VPN Settings -->
     <string name="vpn_settings_title">VPN 设置</string>
