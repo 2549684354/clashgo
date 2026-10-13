@@ -37,6 +37,8 @@ internal class OverrideEditorState {
         private set
     var title by mutableStateOf("")
         private set
+    var textHint by mutableStateOf<String?>(null)
+        private set
     private var portSetter: (Int?) -> Unit = {}
     private var textSetter: (String?) -> Unit = {}
     private var listSetter: (List<String>?) -> Unit = {}
@@ -46,9 +48,11 @@ internal class OverrideEditorState {
         open(OverrideEditorKind.Port, title, value?.toString())
     }
 
-    fun editText(title: String, value: String?, setter: (String?) -> Unit) {
+    // hint 为 null 时文本弹窗用默认提示词。
+    fun editText(title: String, value: String?, hint: String? = null, setter: (String?) -> Unit) {
         textSetter = setter
         open(OverrideEditorKind.Text, title, value)
+        textHint = hint
     }
 
     fun editList(title: String, value: List<String>?, setter: (List<String>?) -> Unit) {
@@ -90,6 +94,7 @@ internal fun OverrideEditorDialogs(state: OverrideEditorState) {
         show = state.kind == OverrideEditorKind.Text,
         title = state.title,
         textState = state.textState,
+        label = state.textHint ?: stringResource(R.string.network_input_value),
         onDismiss = state::dismiss,
         onConfirm = state::applyText,
     )
@@ -192,6 +197,7 @@ private fun TextEditDialog(
     show: Boolean,
     title: String,
     textState: TextFieldState,
+    label: String,
     onDismiss: () -> Unit,
     onConfirm: (String?) -> Unit,
 ) {
@@ -204,7 +210,7 @@ private fun TextEditDialog(
         TextField(
             state = textState,
             modifier = Modifier.fillMaxWidth(),
-            label = stringResource(R.string.network_input_value),
+            label = label,
         )
         Spacer(Modifier.height(12.dp))
         EditDialogButtons(

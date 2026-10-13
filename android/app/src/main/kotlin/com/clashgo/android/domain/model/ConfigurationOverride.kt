@@ -19,6 +19,8 @@ data class ConfigurationOverride(
     @SerialName("external-controller") val externalController: String? = null,
     @SerialName("secret") val secret: String? = null,
     @SerialName("unified-delay") val unifiedDelay: Boolean? = null,
+    // 仅 App 侧使用：节点延迟测试的探测 URL，不进内核配置（Go 合并时忽略未知字段）。
+    @SerialName("delay-test-url") val delayTestUrl: String? = null,
     @SerialName("geodata-mode") val geodataMode: Boolean? = null,
     @SerialName("tcp-concurrent") val tcpConcurrent: Boolean? = null,
     @SerialName("find-process-mode") val findProcessMode: String? = null,
@@ -26,7 +28,11 @@ data class ConfigurationOverride(
     @SerialName("sniffer") val sniffer: SnifferOverride? = null,
     @SerialName("tun") val tun: TunOverride? = null,
     @SerialName("profile") val profile: ProfileOverride? = null,
-)
+) {
+    companion object {
+        const val DEFAULT_DELAY_TEST_URL = "https://www.gstatic.com/generate_204"
+    }
+}
 
 @Serializable
 data class DnsOverride(
@@ -81,6 +87,10 @@ data class ProfileOverride(
 fun ConfigurationOverride.resolveExternalController(): String =
     (externalController?.trim()?.takeIf { it.isNotEmpty() } ?: "127.0.0.1:9090")
         .replace("0.0.0.0", "127.0.0.1")
+
+// 整个 App 的节点延迟测试共用这个 URL；留空/未配置时回落到默认值。
+fun ConfigurationOverride.resolveDelayTestUrl(): String =
+    delayTestUrl?.trim()?.takeIf { it.isNotEmpty() } ?: ConfigurationOverride.DEFAULT_DELAY_TEST_URL
 
 fun ConfigurationOverride.resolveSecretOrNull(): String? =
     secret?.trim()?.takeIf { it.isNotEmpty() }

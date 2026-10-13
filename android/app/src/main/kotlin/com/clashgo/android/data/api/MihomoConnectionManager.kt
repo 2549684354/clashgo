@@ -1,6 +1,7 @@
 package com.clashgo.android.data.api
 
 import com.clashgo.android.data.repository.MihomoRepositoryImpl
+import com.clashgo.android.data.repository.OverrideJsonStore
 import com.clashgo.android.domain.repository.MihomoRepository
 import com.clashgo.android.platform.ProxyServiceBridge
 import com.clashgo.android.platform.ProxyServiceStatus
@@ -17,6 +18,7 @@ import kotlinx.coroutines.sync.withLock
 class MihomoConnectionManager(
     private val appVisible: StateFlow<Boolean>,
     scope: CoroutineScope,
+    private val overrideStore: OverrideJsonStore,
 ) {
 
     private val _repository = MutableStateFlow<MihomoRepository?>(null)
@@ -61,7 +63,7 @@ class MihomoConnectionManager(
             secret = status.secret,
         )
         val ws = MihomoWebSocket(client)
-        return MihomoRepositoryImpl(client, ws)
+        return MihomoRepositoryImpl(client, ws, overrideStore)
     }
 
     private companion object {

@@ -32,11 +32,12 @@ JNIEXPORT jstring JNICALL
 Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeFetchAndValid(
         JNIEnv *env, jclass clazz,
         jstring jWorkDir, jstring jUrl, jboolean jForce, jstring jHttpProxy, jstring jUserAgent,
-        jint jToken) {
+        jstring jKey, jint jToken) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
     char *url = jstring_to_cstr(env, jUrl);
     char *httpProxy = jstring_to_cstr(env, jHttpProxy);
     char *userAgent = jstring_to_cstr(env, jUserAgent);
+    char *key = jstring_to_cstr(env, jKey);
 
     char *result = stellibertyFetchAndValid(
             workDir ? workDir : "",
@@ -44,12 +45,14 @@ Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeFetchAndValid(
             jForce ? 1 : 0,
             httpProxy ? httpProxy : "",
             userAgent ? userAgent : "",
+            key ? key : "",
             (int) jToken);
 
     free(workDir);
     free(url);
     free(httpProxy);
     free(userAgent);
+    free(key);
 
     return go_cstr_to_jstring(env, result);
 }
@@ -65,14 +68,6 @@ Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeQueryProgress(
         JNIEnv *env, jclass clazz, jint jToken) {
     char *progress = stellibertyQueryProgress((int) jToken);
     return go_cstr_to_jstring(env, progress);
-}
-
-JNIEXPORT void JNICALL
-Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeSetAgeSecretKey(
-        JNIEnv *env, jclass clazz, jstring jKey) {
-    char *key = jstring_to_cstr(env, jKey);
-    stellibertySetAgeSecretKey(key ? key : "");
-    free(key);
 }
 
 JNIEXPORT jstring JNICALL
@@ -156,21 +151,24 @@ Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeProxyPreview(
 JNIEXPORT jstring JNICALL
 Java_com_clashgo_android_data_bridge_ClashGoCoreBridge_nativeProxyNodeDelay(
         JNIEnv *env, jclass clazz,
-        jstring jWorkDir, jstring jTransform, jstring jKey, jstring jNode, jint jTimeout) {
+        jstring jWorkDir, jstring jTransform, jstring jKey, jstring jNode, jstring jUrl, jint jTimeout) {
     char *workDir = jstring_to_cstr(env, jWorkDir);
     char *transform = jstring_to_cstr(env, jTransform);
     char *key = jstring_to_cstr(env, jKey);
     char *node = jstring_to_cstr(env, jNode);
+    char *url = jstring_to_cstr(env, jUrl);
     char *result = stellibertyProxyNodeDelay(
             workDir ? workDir : "",
             transform ? transform : "",
             key ? key : "",
             node ? node : "",
+            url ? url : "",
             (int) jTimeout);
     free(workDir);
     free(transform);
     free(key);
     free(node);
+    free(url);
     return go_cstr_to_jstring(env, result);
 }
 

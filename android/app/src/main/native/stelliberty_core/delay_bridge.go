@@ -17,8 +17,8 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// 与运行时测速同一目标：运行态 REST 的默认探测地址已改为 cp.cloudflare.com，预览态保持同口径，
-// 同一节点在内核未运行/运行中两种状态下的延迟数字才可比。
+// 运行态 REST 测速的默认探测地址；预览态仅在 App 未传 URL 时兜底，正常都应与
+// 「延迟测试URL」设置同源，保证同一节点在内核未运行/运行中两种状态下延迟数字可比。
 const previewDelayTestURL = "http://cp.cloudflare.com/generate_204"
 
 type previewDelayResult struct {
@@ -46,7 +46,7 @@ func applyUnifiedDelayFromConfig(config []byte) (restore func()) {
 }
 //
 //export stellibertyProxyNodeDelay
-func stellibertyProxyNodeDelay(cWorkDir, cTransform, cKey, cNode *C.char, cTimeout C.int) *C.char {
+func stellibertyProxyNodeDelay(cWorkDir, cTransform, cKey, cNode, cURL *C.char, cTimeout C.int) *C.char {
 	return guardString(func() string {
 		workDir := C.GoString(cWorkDir)
 		out, err := readTransformedConfig(workDir, C.GoString(cTransform), C.GoString(cKey))
@@ -61,6 +61,10 @@ func stellibertyProxyNodeDelay(cWorkDir, cTransform, cKey, cNode *C.char, cTimeo
 		if err != nil {
 			return "error: parse proxy: " + err.Error()
 		}
+		testURL := C.GoString(cURL)
+		if testURL == "" {
+			testURL = previewDelayTestURL
+		}
 		timeout := time.Duration(C.int(cTimeout)) * time.Millisecond
 		if timeout <= 0 {
 			timeout = 5 * time.Second
@@ -69,7 +73,7 @@ func stellibertyProxyNodeDelay(cWorkDir, cTransform, cKey, cNode *C.char, cTimeo
 		defer cancel()
 		restore := applyUnifiedDelayFromConfig(out)
 		defer restore()
-		delay, err := proxy.URLTest(ctx, previewDelayTestURL, nil)
+		delay, err := proxy.URLTest(ctx, testURL, nil)
 		if err != nil || delay == 0 {
 			return "error: node unreachable"
 		}

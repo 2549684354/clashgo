@@ -16,6 +16,7 @@ import com.clashgo.android.domain.model.RuleProvidersResponse
 import com.clashgo.android.domain.model.RulesResponse
 import com.clashgo.android.domain.model.TrafficData
 import com.clashgo.android.domain.repository.MihomoRepository
+import com.clashgo.android.domain.model.resolveDelayTestUrl
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -30,6 +31,7 @@ import kotlinx.coroutines.withContext
 class MihomoRepositoryImpl(
     private val apiClient: MihomoApiClient,
     private val webSocket: MihomoWebSocket,
+    private val overrideStore: OverrideJsonStore,
 ) : MihomoRepository {
 
     override val connectionState: StateFlow<Boolean> get() = webSocket.connectionState
@@ -46,18 +48,18 @@ class MihomoRepositoryImpl(
     override suspend fun unfixProxy(group: String): Result<Unit> = io { apiClient.unfixProxy(group) }
     override suspend fun getProxyDelay(
         name: String,
-        testUrl: String,
+        testUrl: String?,
         timeout: Int,
     ): Result<DelayResult> =
-        io { apiClient.getProxyDelay(name, testUrl, timeout) }
+        io { apiClient.getProxyDelay(name, testUrl ?: overrideStore.load().resolveDelayTestUrl(), timeout) }
 
     override suspend fun getProviderProxyDelay(
         provider: String,
         name: String,
-        testUrl: String,
+        testUrl: String?,
         timeout: Int,
     ): Result<DelayResult> =
-        io { apiClient.getProviderProxyDelay(provider, name, testUrl, timeout) }
+        io { apiClient.getProviderProxyDelay(provider, name, testUrl ?: overrideStore.load().resolveDelayTestUrl(), timeout) }
 
     override suspend fun testDelays(nodes: Collection<String>, providerOf: Map<String, String>) {
         val semaphore = Semaphore(DELAY_CONCURRENCY)

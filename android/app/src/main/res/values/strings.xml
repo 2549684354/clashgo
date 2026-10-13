@@ -213,7 +213,7 @@
     <string name="subscription_used_traffic">Used %1$s / %2$s</string>
     <string name="subscription_no_traffic">No traffic info</string>
     <string name="subscription_updated_at">Updated at %1$s</string>
-    <string name="subscription_last_error">Last update failed: %1$s</string>
+    <string name="subscription_last_error">Update failed: %1$s</string>
     <string name="subscription_delete_title">Delete subscription</string>
     <string name="subscription_delete_summary">Delete \"%1$s\"? This will remove the config files and selection history.</string>
 
@@ -244,13 +244,12 @@
     <string name="subscription_auto_delay_interval">Auto latency test</string>
     <string name="subscription_auto_delay_placeholder">minutes, leave empty to turn off</string>
     <string name="subscription_import_config">Import Config</string>
-    <string name="subscription_updating_title">Updating subscriptions</string>
     <string name="subscription_updating_progress">%1$s (%2$d / %3$d)</string>
     <string name="subscription_downloading">Downloading config...</string>
     <string name="subscription_validating">Validating config...</string>
     <string name="subscription_prefetching">Prefetching providers...</string>
-    <string name="subscription_update_config">Update Config</string>
     <string name="subscription_file_only_no_update">File-imported config cannot be updated online</string>
+    <string name="subscription_update_success">Subscription updated</string>
 
     <!-- Subscription import errors -->
     <string name="error_import_failed">Import failed: %1$s</string>
@@ -526,6 +525,8 @@
     <string name="wifi_policy_permission_required">Nearby devices and location permissions are required to read the current SSID</string>
 
     <!-- Meta Settings -->
+    <string name="network_delay_test_url">Delay Test URL</string>
+    <string name="network_delay_test_url_hint">Enter custom URL</string>
     <string name="network_unified_delay">Unified Delay</string>
     <string name="performance_geodata_mode">Geodata Mode</string>
     <string name="network_tcp_concurrent">TCP Concurrent</string>
