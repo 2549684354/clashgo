@@ -259,7 +259,11 @@ class HomeViewModel(
             connectionManager.repository.collect { repo ->
                 repository = repo
                 if (repo != null) {
+                    // 速度详情打开期间内核重启：旧收集任务绑在被关闭的旧客户端上，
+                    // 必须用新仓库重启，否则留下僵尸重试流且新速率数据永远不来。
+                    val rateTrackingActive = connectionRateJob?.isActive == true
                     connectToMihomo()
+                    if (rateTrackingActive) startConnectionRateTracking()
                 } else {
                     disconnectStreams()
                 }
@@ -492,9 +496,11 @@ class HomeViewModel(
     }
 
     // 只在速度详情打开时才订阅：这条流每秒推送全部连接的完整列表，几百条常驻解析代价不小。
+    // 仓库替换（内核重启）时也会再次调用：旧任务绑在已关闭的旧客户端上，必须取消换新。
     fun startConnectionRateTracking() {
         val repo = repository ?: return
-        if (connectionRateJob?.isActive == true) return
+        connectionRateJob?.cancel()
+        connectionRateJob = null
         prevConnectionBytes = emptyMap()
         prevConnectionAtMillis = 0L
         _topConnectionRates.value = null

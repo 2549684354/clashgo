@@ -46,6 +46,12 @@ class MihomoWebSocket(
 
     private var liveConnections = 0
 
+    // close() 是终结语义：置位后所有数据流的循环退出，不再对已关闭的客户端重试。
+    // 没有这个标志，close 后连接抛出的异常会被下面的通用 catch 吃掉并进入退避重试，
+    // 只要有一条收集协程取消得稍晚，就留下一条每 1~30 秒空转的僵尸流。
+    @Volatile
+    private var closed = false
+
     @Synchronized
     private fun addLiveConnection(delta: Int) {
         liveConnections = (liveConnections + delta).coerceAtLeast(0)
@@ -70,8 +76,8 @@ class MihomoWebSocket(
         apiClient.getWebSocketUrl("/connections"),
     ) { text -> json.decodeFromString<ConnectionsResponse>(text) }
 
-    // 无限重连的数据流，除了被取消不会自己结束。调用 close() 也停不下来：连接被关掉后抛的异常同样
-    // 被这里接住，只是进了重试等待。用的人必须显式取消收集协程，否则留下一条每 30 秒重试的僵尸流。
+    // 无限重连的数据流，除了被取消或 close() 不会自己结束。close() 后连接抛出的异常
+    // 不再记为连接失败，也不进入重试等待，直接结束流。
     private fun <T> webSocketFlow(
         url: String,
         connectedEvent: T? = null,
@@ -80,7 +86,7 @@ class MihomoWebSocket(
     ): Flow<T> = flow {
         val channel = url.substringBefore('?').substringAfterLast('/')
         var backoffMs = INITIAL_BACKOFF_MS
-        while (currentCoroutineContext().isActive) {
+        while (!closed && currentCoroutineContext().isActive) {
             var counted = false
             try {
                 wsClient.webSocket(url) {
@@ -100,10 +106,12 @@ class MihomoWebSocket(
             } catch (ce: CancellationException) {
                 throw ce
             } catch (error: Exception) {
+                if (closed) return@flow
                 AppLogger.warn("MihomoWebSocket", "$channel channel failed (${error.javaClass.simpleName}); retry in ${backoffMs}ms")
             } finally {
                 if (counted) addLiveConnection(-1)
             }
+            if (closed) break
             disconnectedEvent?.let { emit(it) }
             AppLogger.debug("MihomoWebSocket", "$channel channel disconnected; retry in ${backoffMs}ms")
             delay(backoffMs)
@@ -112,6 +120,7 @@ class MihomoWebSocket(
     }.flowOn(Dispatchers.Default)
 
     fun close() {
+        closed = true
         wsClient.close()
     }
 
