@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -332,7 +333,13 @@ private fun ProxyNodeCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(1.dp, RoundedCornerShape(density.radius.dp))
+            // 与订阅卡同款：只保留向下投影，去掉四周均匀的 ambient 灰圈。
+            .shadow(
+                elevation = 2.dp,
+                shape = RoundedCornerShape(density.radius.dp),
+                ambientColor = Color.Transparent,
+                spotColor = Color.Black.copy(alpha = 0.22f),
+            )
             .squircleSurface(MiuixTheme.colorScheme.surfaceContainer, density.radius.dp)
             .selectable(selected = isSelected, enabled = isSelectable, role = Role.RadioButton, onClick = onClick)
             .testTag(TestTags.Proxy.node(name)),
