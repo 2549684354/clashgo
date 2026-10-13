@@ -309,15 +309,15 @@ private fun SubscriptionItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            // ambient 置透明：elevation 阴影的四周均匀分量会让卡片像垫在灰板上，只留向下投影。
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 12.dp)
+            // shadow 必须在 padding 之后：贴着卡片实际边缘，而不是比卡片大一圈的外框。
             .shadow(
                 elevation = 2.dp,
                 shape = RoundedCornerShape(16.dp),
                 ambientColor = Color.Transparent,
                 spotColor = Color.Black.copy(alpha = 0.22f),
             )
-            .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp)
             .testTag(TestTags.Subscription.item(subscription.id)),
         insideMargin = PaddingValues(16.dp),
         onClick = onSelect,
