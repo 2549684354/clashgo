@@ -8,7 +8,7 @@ interface ProfileFileManager {
 
     fun writeProcessingConfig(workDir: String, content: String)
 
-    fun cleanupProcessing()
+    fun cleanupProcessing(uuid: String)
 
     fun commitProcessingToImported(uuid: String)
 

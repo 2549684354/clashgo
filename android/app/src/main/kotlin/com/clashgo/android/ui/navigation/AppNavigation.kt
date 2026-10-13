@@ -116,7 +116,6 @@ import com.clashgo.android.ui.screen.overrides.OverrideFileEditorScreen
 import com.clashgo.android.ui.screen.overrides.OverrideListScreen
 import com.clashgo.android.ui.screen.overrides.SubscriptionOverridesScreen
 import com.clashgo.android.ui.screen.subscription.SubscriptionScreen
-import com.clashgo.android.ui.screen.subscription.SubscriptionUpdateProgressDialog
 import com.clashgo.android.ui.theme.BottomBarMode
 import com.clashgo.android.ui.theme.FloatingBottomBarStyle
 import com.clashgo.android.ui.theme.LocalAppDarkMode
@@ -666,7 +665,6 @@ fun AppNavigation(
         }
     }
 
-    subscriptionViewModel?.let { SubscriptionUpdateProgressDialog(it) }
     appUpdateViewModel?.let { AppUpdateDialog(it) }
 }
 

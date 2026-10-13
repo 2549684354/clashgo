@@ -1,5 +1,10 @@
 package com.clashgo.android.ui.screen.subscription
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -101,7 +107,7 @@ fun SubscriptionScreen(
                             IconButton(
                                 onClick = { viewModel.updateAllSubscriptions() },
                                 modifier = Modifier.testTag(TestTags.Subscription.UPDATE_ALL),
-                                enabled = !uiState.isLoading,
+                                enabled = !uiState.isLoading && uiState.operation != ProfileOperation.Update && uiState.updatingIds.isEmpty(),
                             ) {
                                 Icon(
                                     imageVector = AppIcons.Refresh,
@@ -220,23 +226,6 @@ fun SubscriptionScreen(
                     }
                 }
 
-                if (uiState.error.isNotEmpty()) {
-                    item(key = "error") {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp)
-                                .padding(bottom = 12.dp),
-                            insideMargin = PaddingValues(16.dp),
-                        ) {
-                            Text(
-                                text = uiState.error,
-                                color = StatusColors.danger,
-                            )
-                        }
-                    }
-                }
-
                 if (uiState.subscriptions.isEmpty()) {
                     item(key = "empty") {
                         Column(
@@ -263,7 +252,8 @@ fun SubscriptionScreen(
                     SubscriptionItem(
                         subscription = sub,
                         isActive = sub.id == uiState.currentId,
-                        isLoading = uiState.isLoading,
+                        isLoading = uiState.isLoading || uiState.updatingIds.isNotEmpty(),
+                        isUpdating = sub.id in uiState.updatingIds,
                         onSelect = {
                             viewModel.setActive(sub.id)
                             onActiveChanged?.invoke()
@@ -279,16 +269,13 @@ fun SubscriptionScreen(
         }
     }
 
-    val title = when (uiState.operation) {
-        ProfileOperation.Update -> stringResource(R.string.subscription_update_config)
-        else -> stringResource(R.string.subscription_import_config)
-    }
     // 本页被 push 出去的子页（URL 导入/编辑等）会渲染它们自己的进度弹窗；
     // NavDisplay 保留底层页面的组合，这里不再显示，避免同一进度弹出两个。
+    // 订阅更新不再弹进度框：进行中的状态用卡片刷新按钮的旋转表达，结果走 Toast。
     ImportProgressDialog(
-        show = isNavTop && uiState.importProgress != null,
+        show = isNavTop && uiState.importProgress != null && uiState.operation != ProfileOperation.Update,
         step = uiState.importProgress?.let { importStepLabel(it) } ?: stringResource(R.string.common_processing),
-        title = title,
+        title = stringResource(R.string.subscription_import_config),
         onCancel = { viewModel.cancelCurrentUpdate() },
     )
 }
@@ -298,6 +285,7 @@ private fun SubscriptionItem(
     subscription: Subscription,
     isActive: Boolean,
     isLoading: Boolean,
+    isUpdating: Boolean,
     onSelect: () -> Unit,
     onRefresh: () -> Unit,
     onDelete: () -> Unit,
@@ -412,12 +400,30 @@ private fun SubscriptionItem(
                 minWidth = 35.dp,
                 backgroundColor = MiuixTheme.colorScheme.secondaryContainer,
             ) {
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = AppIcons.Refresh,
-                    contentDescription = stringResource(R.string.common_update),
-                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                )
+                // 只有正在更新的订阅转：1s/圈线性旋转；其余卡片按钮保持静止，
+                // 无限动画也只在更新中创建，避免空闲卡片常驻动画开销。
+                if (isUpdating) {
+                    val angle = rememberInfiniteTransition(label = "subscription_refresh_spin")
+                        .animateFloat(
+                            initialValue = 0f,
+                            targetValue = 360f,
+                            animationSpec = infiniteRepeatable(tween(durationMillis = 1000, easing = LinearEasing)),
+                            label = "subscription_refresh_angle",
+                        ).value
+                    Icon(
+                        modifier = Modifier.size(20.dp).rotate(angle),
+                        imageVector = AppIcons.Refresh,
+                        contentDescription = stringResource(R.string.common_update),
+                        tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    )
+                } else {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        imageVector = AppIcons.Refresh,
+                        contentDescription = stringResource(R.string.common_update),
+                        tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    )
+                }
             }
             Spacer(Modifier.width(8.dp))
             IconButton(

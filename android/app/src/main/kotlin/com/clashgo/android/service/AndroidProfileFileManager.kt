@@ -22,8 +22,8 @@ class AndroidProfileFileManager(private val context: Context) : ProfileFileManag
         ProfileFileOps.writeProcessingConfig(workDir, content)
     }
 
-    override fun cleanupProcessing() {
-        ProfileFileOps.cleanupProcessing(context)
+    override fun cleanupProcessing(uuid: String) {
+        ProfileFileOps.cleanupProcessing(context, uuid)
     }
 
     override fun commitProcessingToImported(uuid: String) {
