@@ -48,6 +48,7 @@ val keystorePath: String? = System.getenv("KEYSTORE_PATH") ?: properties.getProp
 val keystorePwd: String? = System.getenv("KEYSTORE_PASS") ?: properties.getProperty("KEYSTORE_PASS")
 val alias: String? = System.getenv("KEY_ALIAS") ?: properties.getProperty("KEY_ALIAS")
 val pwd: String? = System.getenv("KEY_PASSWORD") ?: properties.getProperty("KEY_PASSWORD")
+val debugApplicationIdSuffix: String? = properties.getProperty("debug.applicationIdSuffix")
 
 @Suppress("UnstableApiUsage")
 android {
@@ -71,6 +72,9 @@ android {
         }
         debug {
             if (keystorePath != null) signingConfig = signingConfigs.getByName("release")
+            // 可选：本机测试把调试包装成独立包名（如 local.properties 写 debug.applicationIdSuffix=.debug），
+            // 与正式版共存互不覆盖。local.properties 不入库，各机器自行决定，仓库与 CI 保持默认包名。
+            debugApplicationIdSuffix?.let { applicationIdSuffix = it }
         }
     }
     buildFeatures {
