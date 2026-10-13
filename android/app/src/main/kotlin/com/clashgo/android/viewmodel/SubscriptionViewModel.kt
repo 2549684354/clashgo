@@ -16,13 +16,18 @@ import com.clashgo.android.domain.model.SubscriptionUpdateProxyMode
 import com.clashgo.android.domain.repository.SubscriptionRepository
 import com.clashgo.android.platform.ProfileFileManager
 import com.clashgo.android.platform.ProxyServiceController
+import com.clashgo.android.platform.showToast
 import com.clashgo.android.util.AppLogger
 import com.clashgo.android.util.describe
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,16 +45,9 @@ data class SubscriptionUiState(
     val error: String = "",
     val showAddDialog: Boolean = false,
     val importProgress: ImportProgress? = null,
-    val updateAll: UpdateAllProgress? = null,
     val operation: ProfileOperation? = null,
-)
-
-@Immutable
-data class UpdateAllProgress(
-    val completed: Int,
-    val total: Int,
-    val currentName: String,
-    val currentStep: ImportProgress? = null,
+    // 正在更新的订阅 id：驱动对应卡片的刷新按钮旋转，其余卡片保持不动。
+    val updatingIds: ImmutableSet<String> = persistentSetOf(),
 )
 
 class SubscriptionViewModel(
@@ -145,10 +143,30 @@ class SubscriptionViewModel(
             }
             return
         }
-        runPipeline(ProfileOperation.Update, errorKey = R.string.error_update_failed) {
-            processor.update(id, ::reportProgress)
-            serviceController.restartAfterProfileUpdate(id)
+        runPipeline(
+            ProfileOperation.Update,
+            errorKey = R.string.error_update_failed,
+            successMessage = context.getString(R.string.subscription_update_success),
+        ) {
+            setUpdating(id, true)
+            try {
+                processor.update(id, ::reportProgress)
+                serviceController.restartAfterProfileUpdate(id)
+            } finally {
+                setUpdating(id, false)
+            }
         }
+    }
+
+    // 卡片旋转标记：add/remove 都走整值替换，ImmutableSet 才能触发 Compose 重组。
+    private fun setUpdating(id: String, updating: Boolean) {
+        _uiState.value = _uiState.value.copy(
+            updatingIds = if (updating) {
+                (_uiState.value.updatingIds + id).toPersistentSet()
+            } else {
+                (_uiState.value.updatingIds - id).toPersistentSet()
+            },
+        )
     }
 
     fun removeSubscription(id: String, onActiveChanged: () -> Unit = {}) {
@@ -179,8 +197,8 @@ class SubscriptionViewModel(
         )
     }
 
-    // 逐条等它做完，只为让进度条一次只前进一格。让配置生效的那次重启排在整轮结束之后且只做一次：
-    // 中途重启会断网，后面还要下载的订阅会跟着一起失败。
+    // 全部目标并发更新：每个订阅各占一条协程（处理目录已按 uuid 隔离），卡片各自的刷新按钮旋转。
+    // 让配置生效的重启仍排在整个批次结束之后：中途重启会断网，还没下载完的订阅会跟着失败。
     private fun updateSubscriptions(targets: List<Subscription>) {
         if (targets.isEmpty()) return
         if (isBusy()) return
@@ -189,37 +207,41 @@ class SubscriptionViewModel(
         currentJob = viewModelScope.launch {
             val failures = mutableListOf<String>()
             val updated = mutableListOf<String>()
-            val total = targets.size
             try {
-                targets.forEachIndexed { index, sub ->
-                    _uiState.value = _uiState.value.copy(
-                        updateAll = UpdateAllProgress(index, total, sub.name),
-                    )
-                    try {
-                        processor.update(sub.id) { progress ->
-                            val state = _uiState.value.updateAll ?: return@update
-                            _uiState.value = _uiState.value.copy(
-                                updateAll = state.copy(currentStep = progress),
-                            )
+                coroutineScope {
+                    targets.forEach { sub ->
+                        launch {
+                            setUpdating(sub.id, true)
+                            try {
+                                processor.update(sub.id)
+                                updated += sub.id
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Throwable) {
+                                AppLogger.warn(TAG, "Batch update failed for ${sub.id}", e)
+                                val label = if (e is ConfigValidationException) {
+                                    context.getString(R.string.error_validation_failed, e.describe())
+                                } else {
+                                    context.getString(R.string.error_update_failed, localizedMessage(e))
+                                }
+                                // failures/updated 只会在主线程协程里追加（viewModelScope 固定 Main 调度），无需同步。
+                                failures += "${sub.name}: $label"
+                            } finally {
+                                setUpdating(sub.id, false)
+                            }
                         }
-                        updated += sub.id
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Throwable) {
-                        AppLogger.warn(TAG, "Batch update failed for ${sub.id}", e)
-                        val label = if (e is ConfigValidationException) {
-                            context.getString(R.string.error_validation_failed, e.describe())
-                        } else {
-                            context.getString(R.string.error_update_failed, localizedMessage(e))
-                        }
-                        failures += "${sub.name}: $label"
                     }
                 }
                 _uiState.value = _uiState.value.copy(
-                    updateAll = null,
                     operation = null,
                     error = if (failures.isEmpty()) "" else failures.joinToString("\n"),
                 )
+                // 批量更新（手动「全部更新」与启动时自动更新）走 Toast：页面外也能收到结果。
+                if (failures.isEmpty()) {
+                    showToast(context.getString(R.string.subscription_update_success))
+                } else {
+                    showToast(failures.joinToString("\n"), long = true)
+                }
                 updated.forEach { serviceController.restartAfterProfileUpdate(it) }
             } catch (e: CancellationException) {
                 AppLogger.info(TAG, "Batch profile update cancelled")
@@ -260,6 +282,7 @@ class SubscriptionViewModel(
     private fun runPipeline(
         op: ProfileOperation,
         @StringRes errorKey: Int,
+        successMessage: String? = null,
         block: suspend () -> Unit,
     ) {
         if (isBusy()) return
@@ -274,6 +297,7 @@ class SubscriptionViewModel(
             try {
                 block()
                 AppLogger.info(TAG, "Profile operation $op completed")
+                successMessage?.let { showToast(it) }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     importProgress = null,
@@ -290,6 +314,9 @@ class SubscriptionViewModel(
                 } else {
                     context.getString(errorKey, localizedMessage(e))
                 }
+                // 失败同步 Toast：订阅页顶部错误横幅已移除，导入/更新失败只靠这里反馈。
+                // Edit 操作的失败仍由编辑页自己的横幅展示，不重复弹。
+                if (op != ProfileOperation.Edit) showToast(message, long = true)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     importProgress = null,
@@ -331,8 +358,8 @@ class SubscriptionViewModel(
         _uiState.value = _uiState.value.copy(
             isLoading = false,
             importProgress = null,
-            updateAll = null,
             operation = null,
+            updatingIds = persistentSetOf(),
         )
     }
 

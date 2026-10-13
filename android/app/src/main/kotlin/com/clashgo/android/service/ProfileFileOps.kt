@@ -14,7 +14,8 @@ import kotlin.concurrent.thread
 object ProfileFileOps {
 
     private const val TAG = "ProfileFileOps"
-    private const val COMMIT_STAGING = "commit.new"
+    // 提交暂存目录按 uuid 隔离：并发更新各自的暂存互不可见，提交仍由 repo 级锁串行。
+    private const val COMMIT_STAGING_PREFIX = "commit.new."
     private const val COMMIT_OLD_PREFIX = "commit.old."
     private const val PROVIDERS_DIR = "providers"
 
@@ -36,8 +37,9 @@ object ProfileFileOps {
         return dir
     }
 
-    fun getProcessingDir(context: Context): File {
-        val dir = File(getWorkDir(context), "processing")
+    // processing 目录按订阅隔离（processing/<uuid>），多个订阅可以同时下载互不覆盖。
+    fun getProcessingDir(context: Context, uuid: String): File {
+        val dir = File(getWorkDir(context), "processing/$uuid")
         if (!dir.exists()) dir.mkdirs()
         return dir
     }
@@ -68,10 +70,9 @@ object ProfileFileOps {
         if (pending.exists()) pending.deleteRecursively()
     }
 
-    // processing 目录全进程只有一个（路径里不带订阅编号），所以从清空到提交必须完全串行。
-    // 并发两个更新会交错清空同一个目录，把一个订阅下载的配置提交进另一个订阅里。
+    // 处理目录按 uuid 隔离，清空→提交只影响本订阅，可与其它订阅的更新并发。
     fun prepareProcessing(context: Context, uuid: String): File {
-        val processing = getProcessingDir(context)
+        val processing = getProcessingDir(context, uuid)
         processing.deleteRecursively()
         processing.mkdirs()
         val pending = File(getWorkDir(context), "pending/$uuid")
@@ -103,26 +104,26 @@ object ProfileFileOps {
         return file
     }
 
-    fun cleanupProcessing(context: Context) {
+    // 按订阅清理处理残留：本 uuid 的 processing / commit.new 暂存，以及崩溃留下的 commit.old 还原。
+    fun cleanupProcessing(context: Context, uuid: String) {
         val workDir = getWorkDir(context)
-        val processing = File(workDir, "processing")
-        if (processing.exists()) processing.deleteRecursively()
-        File(workDir, COMMIT_STAGING).deleteRecursively()
-        workDir.listFiles { f -> f.isDirectory && f.name.startsWith(COMMIT_OLD_PREFIX) }
-            ?.forEach { saved ->
-                val imported = File(workDir, "imported/${saved.name.removePrefix(COMMIT_OLD_PREFIX)}")
-                if (imported.exists()) removeMaybeRootOwned(saved) else saved.renameTo(imported)
-            }
+        File(workDir, "processing/$uuid").deleteRecursively()
+        File(workDir, "$COMMIT_STAGING_PREFIX$uuid").deleteRecursively()
+        val old = File(workDir, "$COMMIT_OLD_PREFIX$uuid")
+        if (old.exists()) {
+            val imported = File(workDir, "imported/$uuid")
+            if (imported.exists()) removeMaybeRootOwned(old) else old.renameTo(imported)
+        }
     }
 
     // 先拷到临时目录再改名换上去，所有删除都排在拷贝之后：失败时原目录仍然完整——
     // 更新订阅的场景下它是唯一一份。两次改名中间挂了，靠留下的旧目录在下次启动时还原。
     fun commitProcessingToImported(context: Context, uuid: String) {
         val workDir = getWorkDir(context)
-        val processing = getProcessingDir(context)
+        val processing = getProcessingDir(context, uuid)
         val imported = File(workDir, "imported/$uuid")
         val pending = File(workDir, "pending/$uuid")
-        val staging = File(workDir, COMMIT_STAGING)
+        val staging = File(workDir, "$COMMIT_STAGING_PREFIX$uuid")
         val old = File(workDir, "$COMMIT_OLD_PREFIX$uuid")
 
         staging.deleteRecursively()
@@ -158,19 +159,26 @@ object ProfileFileOps {
         val imported = File(getWorkDir(context), "imported/$uuid")
         val pending = File(getWorkDir(context), "pending/$uuid")
         val runtime = File(getWorkDir(context), "runtime/$uuid")
+        val processing = File(getWorkDir(context), "processing/$uuid")
+        val staging = File(getWorkDir(context), "$COMMIT_STAGING_PREFIX$uuid")
+        val old = File(getWorkDir(context), "$COMMIT_OLD_PREFIX$uuid")
         if (imported.exists() && !imported.deleteRecursively()) {
             RootHelper.rmRfAsRoot(imported.absolutePath)
         }
-        if (pending.exists()) pending.deleteRecursively()
-        if (runtime.exists() && !runtime.deleteRecursively()) {
-            RootHelper.rmRfAsRoot(runtime.absolutePath)
-        }
+        pending.deleteRecursively()
+        runtime.deleteRecursively()
+        processing.deleteRecursively()
+        staging.deleteRecursively()
+        if (old.exists() && !old.deleteRecursively()) RootHelper.rmRfAsRoot(old.absolutePath)
     }
 
     // 删订阅是「先删列表条目、再删目录」两步，中间进程挂了就留下永远没人认领的目录。
     // 只有订阅列表知道哪些还算数，所以按现存的编号反着扫。
     fun deleteOrphanProfileDirs(context: Context, knownUuids: Set<String>): List<String> {
         val workDir = getWorkDir(context)
+        // 旧版布局残留：共享 processing 根目录里的散文件（现为 processing/<uuid>）与共享 commit.new。
+        File(workDir, "processing").listFiles()?.filter { it.isFile }?.forEach { it.delete() }
+        File(workDir, "commit.new").deleteRecursively()
         val orphans = listOf("imported", "pending")
             .flatMap { sub -> File(workDir, sub).listFiles()?.filter { it.isDirectory }.orEmpty() }
             .map { it.name }

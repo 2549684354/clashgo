@@ -10,6 +10,7 @@ import com.clashgo.android.platform.ProfileFileManager
 import com.clashgo.android.util.AppLogger
 import com.clashgo.android.util.describe
 import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.TimeSource
 import kotlinx.coroutines.Dispatchers
@@ -37,19 +38,19 @@ class ProfileProcessor(
     private val proxyResolver: SubscriptionProxyResolver,
 ) {
 
-    // 启动时清理：临时目录的残留，以及没人认领的订阅目录（删订阅是先删列表条目再删目录两步，
-    // 中间进程挂了就会留下孤儿）。必须和处理流程用同一把锁，否则会擦掉后台任务正在写的内容。
+    // 启动时清理：各订阅的处理残留，以及没人认领的订阅目录（删订阅是先删列表条目再删目录两步，
+    // 中间进程挂了就会留下孤儿）。处理目录已按 uuid 隔离，按 uuid 加锁清理即可与并发更新互斥。
     suspend fun cleanupResidual() = withContext(Dispatchers.IO) {
-        processLock.withLock {
-            fileManager.cleanupProcessing()
-            val known = repo.knownUuidsOrNull()
-            if (known == null) {
-                AppLogger.warn(TAG, "Subscription list incomplete, skipping orphan cleanup")
-                return@withLock
-            }
-            val orphans = fileManager.deleteOrphanDirs(known)
-            if (orphans.isNotEmpty()) AppLogger.info(TAG, "Removed orphan profile dirs: $orphans")
+        val known = repo.knownUuidsOrNull()
+        if (known == null) {
+            AppLogger.warn(TAG, "Subscription list incomplete, skipping residual cleanup")
+            return@withContext
         }
+        known.forEach { uuid ->
+            processLockOf(uuid).withLock { fileManager.cleanupProcessing(uuid) }
+        }
+        val orphans = fileManager.deleteOrphanDirs(known)
+        if (orphans.isNotEmpty()) AppLogger.info(TAG, "Removed orphan profile dirs: $orphans")
     }
 
     suspend fun apply(uuid: String, onProgress: (ImportProgress) -> Unit = {}) {
@@ -65,7 +66,8 @@ class ProfileProcessor(
         isUpdate: Boolean,
         onProgress: (ImportProgress) -> Unit,
     ) = withContext(Dispatchers.IO) {
-        processLock.withLock {
+        // 处理目录与提交暂存都按 uuid 隔离，这里只挡同一订阅的重入；不同订阅可以真正并发。
+        processLockOf(uuid).withLock {
             val (snapshot, workDir) = repo.withProfileLock {
                 if (isUpdate) {
                     val imported = repo.queryImported(uuid)
@@ -146,7 +148,7 @@ class ProfileProcessor(
                     AppLogger.error(TAG, "Profile pipeline failed for $uuid (update=$isUpdate)", t)
                 }
                 withContext(NonCancellable) {
-                    fileManager.cleanupProcessing()
+                    fileManager.cleanupProcessing(uuid)
                     if (isUpdate && t !is CancellationException) {
                         repo.withProfileLock { repo.markFailed(uuid, t.describe()) }
                     }
@@ -195,9 +197,14 @@ class ProfileProcessor(
     }
 
     companion object {
-        // 必须全进程共享：前台页面和后台任务各自会创建独立的处理器实例，锁若只属于单个实例，
-        // 两个更新会交错清空同一个临时目录，最后「界面显示订阅 A、点启动实际跑的是 B」。
+        // 全进程锁：备份/恢复、覆写与规则保存用。注意订阅更新（runProcess）已改为按 uuid 加锁，
+        // 不再持有这把锁——恢复备份若与某个更新恰好并发，该更新会因目录被替换而失败报错，不会损坏数据。
         private val processLock = Mutex()
+
+        // 每个 uuid 一把锁：同一订阅的更新互斥，不同订阅的更新可以真正并发。
+        private val processLocks = ConcurrentHashMap<String, Mutex>()
+
+        private fun processLockOf(uuid: String): Mutex = processLocks.computeIfAbsent(uuid) { Mutex() }
 
         private const val TAG = "ProfileProcessor"
 
