@@ -4,6 +4,7 @@ import com.clashgo.android.data.bridge.ClashGoCoreBridge
 import com.clashgo.android.data.store.ProfileTransformWriter
 import com.clashgo.android.data.store.SubscriptionStore
 import com.clashgo.android.domain.model.ProxyPreview
+import com.clashgo.android.domain.model.resolveDelayTestUrl
 import com.clashgo.android.domain.repository.ProxyPreviewRepository
 import com.clashgo.android.platform.ProfileFileManager
 import com.clashgo.android.util.AppLogger
@@ -15,6 +16,7 @@ class ProxyPreviewRepositoryImpl(
     private val subscriptionStore: SubscriptionStore,
     private val transformWriter: ProfileTransformWriter,
     private val fileManager: ProfileFileManager,
+    private val overrideStore: OverrideJsonStore,
 ) : ProxyPreviewRepository {
 
     // 与运行时同一套变换（覆写 + 链式代理）；规则覆写只动 rules 段，预览不需要套。
@@ -51,6 +53,7 @@ class ProxyPreviewRepositoryImpl(
                 transform = transform?.let(::File),
                 ageSecretKey = subscription.ageSecretKey,
                 nodeName = nodeName,
+                testUrl = overrideStore.load().resolveDelayTestUrl(),
                 timeoutMs = timeoutMs,
             )
         } catch (e: Exception) {

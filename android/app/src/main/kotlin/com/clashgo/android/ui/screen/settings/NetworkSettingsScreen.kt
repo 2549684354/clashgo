@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.clashgo.android.R
+import com.clashgo.android.domain.model.ConfigurationOverride
 import com.clashgo.android.ui.component.CardItem
 import com.clashgo.android.ui.component.RestartRequiredHint
 import com.clashgo.android.ui.component.TriStatePreference
@@ -29,6 +30,24 @@ fun NetworkSettingsScreen(
         groupedCardItems(
             keyPrefix = "network_options",
             items = listOf(
+                CardItem("delayTestUrl") {
+                    val title = stringResource(R.string.network_delay_test_url)
+                    val hint = stringResource(R.string.network_delay_test_url_hint)
+                    ArrowPreference(
+                        title = title,
+                        // 未修改时只显示「不修改」，默认 URL 保留在编辑框里。
+                        summary = state.delayTestUrl ?: stringResource(R.string.common_not_modified),
+                        onClick = {
+                            editor.editText(
+                                title,
+                                state.delayTestUrl ?: ConfigurationOverride.DEFAULT_DELAY_TEST_URL,
+                                hint,
+                            ) { v ->
+                                viewModel.update { it.copy(delayTestUrl = v?.trim()?.takeIf { url -> url.isNotEmpty() }) }
+                            }
+                        },
+                    )
+                },
                 CardItem("unifiedDelay") {
                     TriStatePreference(
                         title = stringResource(R.string.network_unified_delay),

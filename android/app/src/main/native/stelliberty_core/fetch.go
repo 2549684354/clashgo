@@ -59,6 +59,7 @@ func stellibertyFetchAndValid(
 	force C.int,
 	cHttpProxy *C.char,
 	cUserAgent *C.char,
+	cKey *C.char,
 	token C.int,
 ) *C.char {
 	return guardString(func() string {
@@ -66,13 +67,14 @@ func stellibertyFetchAndValid(
 		rawURL := C.GoString(cURL)
 		httpProxy := C.GoString(cHttpProxy)
 		userAgent := C.GoString(cUserAgent)
+		ageSecretKey := C.GoString(cKey)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		cancelRegistry.Store(int32(token), func() { cancel() })
 		defer cancelRegistry.Delete(int32(token))
 		defer progressStore.Delete(int32(token))
 
-		result, err := runFetchAndValid(ctx, int32(token), workDir, rawURL, force != 0, httpProxy, userAgent)
+		result, err := runFetchAndValid(ctx, int32(token), workDir, rawURL, force != 0, httpProxy, userAgent, ageSecretKey)
 		if err != nil {
 			return "error: " + err.Error()
 		}
@@ -88,6 +90,7 @@ func runFetchAndValid(
 	force bool,
 	httpProxy string,
 	userAgent string,
+	ageSecretKey string,
 ) (*FetchResult, error) {
 	if err := os.MkdirAll(workDir, 0700); err != nil {
 		return nil, fmt.Errorf("create workDir: %w", err)
@@ -131,6 +134,11 @@ func runFetchAndValid(
 	raw, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("read config: %w", err)
+	}
+	// age 密钥按调用传入而非全局：并发更新各自的密钥互不可见，解密不了的内容原样进解析。
+	raw, err = decryptConfig(raw, ageSecretKey)
+	if err != nil {
+		return nil, err
 	}
 	rawCfg, err := config.UnmarshalRawConfig(raw)
 	if err != nil {

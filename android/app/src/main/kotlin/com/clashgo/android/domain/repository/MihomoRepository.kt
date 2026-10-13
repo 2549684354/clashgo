@@ -32,16 +32,17 @@ interface MihomoRepository {
     suspend fun getGroups(): Result<GroupsResponse>
     suspend fun selectProxy(group: String, name: String): Result<Unit>
     suspend fun unfixProxy(group: String): Result<Unit>
+    // testUrl 为 null 时用「延迟测试URL」设置（resolveDelayTestUrl 的结果）。
     suspend fun getProxyDelay(
         name: String,
-        testUrl: String = "http://cp.cloudflare.com/generate_204",
+        testUrl: String? = null,
         timeout: Int = 5000,
     ): Result<DelayResult>
 
     suspend fun getProviderProxyDelay(
         provider: String,
         name: String,
-        testUrl: String = "http://cp.cloudflare.com/generate_204",
+        testUrl: String? = null,
         timeout: Int = 5000,
     ): Result<DelayResult>
 

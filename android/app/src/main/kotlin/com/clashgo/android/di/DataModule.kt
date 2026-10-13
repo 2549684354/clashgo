@@ -59,6 +59,7 @@ val dataModule = module {
         MihomoConnectionManager(
             appVisible = get<AppVisibilityMonitor>().visible,
             scope = get(),
+            overrideStore = get(),
         )
     }
     single {
@@ -117,6 +118,7 @@ val dataModule = module {
             subscriptionStore = get(),
             transformWriter = get(),
             fileManager = get(),
+            overrideStore = get(),
         )
     }
 

@@ -211,7 +211,7 @@
     <string name="subscription_used_traffic">已用 %1$s / %2$s</string>
     <string name="subscription_no_traffic">未取得流量資訊</string>
     <string name="subscription_updated_at">更新於 %1$s</string>
-    <string name="subscription_last_error">上次更新失敗：%1$s</string>
+    <string name="subscription_last_error">更新失敗：%1$s</string>
     <string name="subscription_delete_title">刪除訂閱</string>
     <string name="subscription_delete_summary">確定要刪除「%1$s」嗎？將會移除設定檔與節點選擇記錄。</string>
 
@@ -242,13 +242,12 @@
     <string name="subscription_auto_delay_interval">自動測試延遲</string>
     <string name="subscription_auto_delay_placeholder">分鐘，留空表示關閉</string>
     <string name="subscription_import_config">匯入設定檔</string>
-    <string name="subscription_updating_title">正在更新訂閱</string>
     <string name="subscription_updating_progress">%1$s (%2$d / %3$d)</string>
     <string name="subscription_downloading">下載設定檔...</string>
     <string name="subscription_validating">驗證設定檔...</string>
     <string name="subscription_prefetching">預先下載 providers...</string>
-    <string name="subscription_update_config">更新設定檔</string>
     <string name="subscription_file_only_no_update">此設定檔由檔案匯入，無法線上更新</string>
+    <string name="subscription_update_success">訂閱更新成功</string>
 
     <!-- Subscription import errors -->
     <string name="error_import_failed">匯入失敗: %1$s</string>
@@ -524,6 +523,8 @@
     <string name="wifi_policy_permission_required">需要附近裝置與位置權限才能讀取目前 SSID</string>
 
     <!-- Meta Settings -->
+    <string name="network_delay_test_url">延遲測試URL</string>
+    <string name="network_delay_test_url_hint">輸入自訂URL</string>
     <string name="network_unified_delay">統一延遲</string>
     <string name="performance_geodata_mode">Geodata 模式</string>
     <string name="network_tcp_concurrent">TCP 並行</string>
