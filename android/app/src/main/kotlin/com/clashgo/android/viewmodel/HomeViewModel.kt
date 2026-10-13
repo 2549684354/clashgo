@@ -1,9 +1,11 @@
 package com.clashgo.android.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.clashgo.android.BuildConfig
+import com.clashgo.android.R
 import com.clashgo.android.data.api.MihomoConnectionManager
 import com.clashgo.android.data.api.RuleLatencyTester
 import com.clashgo.android.data.repository.OverrideJsonStore
@@ -129,6 +131,7 @@ data class SystemInfoSnapshot(
 )
 
 class HomeViewModel(
+    private val context: Context,
     private val serviceController: ProxyServiceController,
     private val overrideStore: OverrideJsonStore,
     private val connectionManager: MihomoConnectionManager,
@@ -651,6 +654,11 @@ class HomeViewModel(
     }
 
     fun startProxy() {
+        // 没有激活订阅时内核没有可用配置，启动必然失败；直接拦下并提醒。
+        if (getActiveSubscriptionId() == null) {
+            showToast(context.getString(R.string.home_no_subscription), long = true)
+            return
+        }
         if (!serviceController.hasVpnPermission()) {
             _uiState.value = _uiState.value.copy(needsVpnPermission = true)
             serviceController.requestVpnPermission()

@@ -134,6 +134,7 @@
     <string name="home_speed_detail">实时连接速率</string>
     <string name="home_speed_no_active_connection">暂无活跃连接</string>
     <string name="home_tools">工具</string>
+    <string name="home_no_subscription">请先添加订阅再启动</string>
     <string name="home_address">地址</string>
     <string name="home_node_region">节点区域</string>
     <string name="home_speed">网速</string>

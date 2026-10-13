@@ -25,6 +25,7 @@ val viewModelModule = module {
     single { AppUpdateViewModel(get(), get()) }
     single {
         HomeViewModel(
+            context = androidContext(),
             serviceController = get(),
             overrideStore = get(),
             connectionManager = get(),

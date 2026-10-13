@@ -136,6 +136,7 @@
     <string name="home_speed_detail">Live Connection Rates</string>
     <string name="home_speed_no_active_connection">No active connections</string>
     <string name="home_tools">Tools</string>
+    <string name="home_no_subscription">Add a subscription before starting</string>
     <string name="home_address">Address</string>
     <string name="home_node_region">Node region</string>
     <string name="home_speed">Speed</string>

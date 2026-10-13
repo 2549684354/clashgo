@@ -134,6 +134,7 @@
     <string name="home_speed_detail">即時連線速率</string>
     <string name="home_speed_no_active_connection">尚無作用中連線</string>
     <string name="home_tools">工具</string>
+    <string name="home_no_subscription">請先新增訂閱再啟動</string>
     <string name="home_address">位址</string>
     <string name="home_node_region">節點區域</string>
     <string name="home_speed">網速</string>
