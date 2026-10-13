@@ -236,6 +236,7 @@ private fun StopButton(onStop: () -> Unit) {
 // 果冻质感胶囊：Miuix Button 只支持实色容器，这里保留它做底（点击/按压/禁用语义不变），
 // 在上面叠一层非交互的纵向高光——顶部提亮、中段消退、底部轻微加深，画出参考图的立体渐变。
 // 覆盖层只有绘制没有手势，触摸事件全部落到下层 Button。
+// 外层 Box 套 cardShadow：与首页卡片同一套柔和投影，shape 用按钮自身圆角避免阴影错位。
 @Composable
 private fun GelButton(
     onClick: () -> Unit,
@@ -250,7 +251,7 @@ private fun GelButton(
     tag: String? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    Box(modifier) {
+    Box(modifier.cardShadow(cornerRadius)) {
         // 按钮负责撑满容器宽度并撑起自身高度（容器宽度由 fillMaxWidth/Row weight 决定），
         // Box 才有确定尺寸，高光的 matchParentSize 才能贴准按钮。
         Button(
