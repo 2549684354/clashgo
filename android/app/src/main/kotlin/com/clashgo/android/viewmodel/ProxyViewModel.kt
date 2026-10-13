@@ -164,7 +164,8 @@ class ProxyViewModel(
     }
 
     // 排序方式不跨订阅继承：订阅归属变化时回到默认排序（排序持久的只有组内顺序，与订阅无关）。
-    private var sortOptionOwner: String? = null
+    // 启动时先认领当前激活订阅——storage 里存的就是它上次的排序，首次加载不得误清。
+    private var sortOptionOwner: String? = getActiveUuid()
 
     private fun resetSortIfSubscriptionChanged(uuid: String?) {
         if (sortOptionOwner == uuid) return

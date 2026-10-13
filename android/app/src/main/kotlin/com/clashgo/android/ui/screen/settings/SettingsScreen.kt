@@ -158,6 +158,11 @@ fun SettingsScreen(
         topBar = {
             BlurredBar(backdrop = backdrop, blurActive = blurActive) {
                 AdaptiveTopAppBar(
+                    // 顶栏自身的手势（拖拽展开等）会吃掉挂在外层 Scaffold 上的 tap 检测，
+                    // 搜索框焦点释放必须直接挂到顶栏内容上。
+                    modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures { focusManager.clearFocus() }
+                    },
                     title = stringResource(R.string.settings_title),
                     color = barColor,
                     scrollBehavior = scrollBehavior,
