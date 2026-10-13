@@ -142,8 +142,19 @@ fun SettingsScreen(
         ),
     )
 
+    // 跳转前先释放搜索框焦点，否则键盘会跟到新页面。
+    val navigateWithBlur: (() -> Unit) -> () -> Unit = { navigate ->
+        {
+            focusManager.clearFocus()
+            navigate()
+        }
+    }
+
+    // 手势挂在整页（含顶栏空白）上：子组件自己消费的点击不受影响，点空白即释放搜索框焦点。
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.pointerInput(Unit) {
+            detectTapGestures { focusManager.clearFocus() }
+        },
         topBar = {
             BlurredBar(backdrop = backdrop, blurActive = blurActive) {
                 AdaptiveTopAppBar(
@@ -160,10 +171,6 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier)
-                    .pointerInput(Unit) {
-                        // 点列表空白处释放搜索框焦点。
-                        detectTapGestures { focusManager.clearFocus() }
-                    }
                     .scrollEndHaptic()
                     .overScrollVertical()
                     .nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -192,7 +199,7 @@ fun SettingsScreen(
                             ArrowPreference(
                                 title = stringResource(R.string.settings_theme_title),
                                 summary = stringResource(R.string.settings_theme_summary),
-                                onClick = onNavigateThemeSettings,
+                                onClick = navigateWithBlur(onNavigateThemeSettings),
                             )
                         })
                     }
@@ -202,21 +209,21 @@ fun SettingsScreen(
                             ArrowPreference(
                                 title = stringResource(R.string.clash_features_title),
                                 summary = stringResource(R.string.clash_features_summary),
-                                onClick = onNavigateClashFeatures,
+                                onClick = navigateWithBlur(onNavigateClashFeatures),
                             )
                         })
                         add(CardItem("overrides") {
                             ArrowPreference(
                                 title = stringResource(R.string.override_title),
                                 summary = stringResource(R.string.settings_overrides_summary),
-                                onClick = onNavigateOverrides,
+                                onClick = navigateWithBlur(onNavigateOverrides),
                             )
                         })
                         add(CardItem("fileManager") {
                             ArrowPreference(
                                 title = stringResource(R.string.settings_file_manager),
                                 summary = stringResource(R.string.settings_file_manager_summary),
-                                onClick = onNavigateFileManager,
+                                onClick = navigateWithBlur(onNavigateFileManager),
                             )
                         })
                     }
@@ -226,14 +233,14 @@ fun SettingsScreen(
                             ArrowPreference(
                                 title = stringResource(R.string.app_behavior_title),
                                 summary = stringResource(R.string.app_behavior_summary),
-                                onClick = onNavigateAppBehavior,
+                                onClick = navigateWithBlur(onNavigateAppBehavior),
                             )
                         })
                         add(CardItem("about") {
                             ArrowPreference(
                                 title = stringResource(R.string.settings_about),
                                 summary = "Clash Go v${BuildConfig.VERSION_NAME}",
-                                onClick = onNavigateAbout,
+                                onClick = navigateWithBlur(onNavigateAbout),
                             )
                         })
                     }
@@ -243,14 +250,14 @@ fun SettingsScreen(
                             ArrowPreference(
                                 title = stringResource(R.string.data_management_title),
                                 summary = stringResource(R.string.data_management_summary),
-                                onClick = onNavigateDataManagement,
+                                onClick = navigateWithBlur(onNavigateDataManagement),
                             )
                         })
                         add(CardItem("ageKey") {
                             ArrowPreference(
                                 title = stringResource(R.string.age_key_title),
                                 summary = stringResource(R.string.age_key_summary),
-                                onClick = onNavigateAgeKey,
+                                onClick = navigateWithBlur(onNavigateAgeKey),
                             )
                         })
                     }
@@ -282,7 +289,7 @@ fun SettingsScreen(
                                         ArrowPreference(
                                             title = stringResource(t.titleRes),
                                             summary = stringResource(t.summaryRes),
-                                            onClick = t.navigate,
+                                            onClick = navigateWithBlur(t.navigate),
                                         )
                                     },
                                 ),
