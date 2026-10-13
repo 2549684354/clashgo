@@ -14,11 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.PlatformTextStyle
@@ -236,7 +239,7 @@ private fun StopButton(onStop: () -> Unit) {
 // 果冻质感胶囊：Miuix Button 只支持实色容器，这里保留它做底（点击/按压/禁用语义不变），
 // 在上面叠一层非交互的纵向高光——顶部提亮、中段消退、底部轻微加深，画出参考图的立体渐变。
 // 覆盖层只有绘制没有手势，触摸事件全部落到下层 Button。
-// 外层 Box 套 cardShadow：与首页卡片同一套柔和投影，shape 用按钮自身圆角避免阴影错位。
+// 外层 Box 套 dropShadow：阴影取按钮自身的容器色（同色系光晕），shape 用按钮圆角避免错位。
 @Composable
 private fun GelButton(
     onClick: () -> Unit,
@@ -251,7 +254,16 @@ private fun GelButton(
     tag: String? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
-    Box(modifier.cardShadow(cornerRadius)) {
+    Box(
+        modifier = modifier.dropShadow(
+            shape = RoundedCornerShape(cornerRadius),
+            shadow = Shadow(
+                radius = ButtonGlowRadius,
+                color = containerColor,
+                alpha = ButtonGlowAlpha,
+            ),
+        ),
+    ) {
         // 按钮负责撑满容器宽度并撑起自身高度（容器宽度由 fillMaxWidth/Row weight 决定），
         // Box 才有确定尺寸，高光的 matchParentSize 才能贴准按钮。
         Button(
@@ -297,6 +309,11 @@ private const val DisabledContentAlpha = 0.7f
 private val ActionButtonHeight = 46.dp
 
 private val ActionButtonRadius = 23.dp
+
+// 按钮同色系光晕：半径给足扩散空间，alpha 压低避免糊成一片。
+private val ButtonGlowRadius = 12.dp
+
+private const val ButtonGlowAlpha = 0.4f
 
 private val StatusValueStyle = TextStyle(
     fontFamily = FontFamily.SansSerif,
