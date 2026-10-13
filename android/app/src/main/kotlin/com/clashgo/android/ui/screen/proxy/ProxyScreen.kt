@@ -299,9 +299,13 @@ fun ProxyScreen(
                                             selected = false, enabled = isRunning && tunMode != TunMode.RootTproxy,
                                         ) { choiceMenu = 2 })
                                         add(MenuEntry(
-                                            text = stringResource(R.string.proxy_group_tabs),
-                                            selected = groupTabs, enabled = true,
-                                        ) { viewModel?.updateGroupTabs(!groupTabs) })
+                                            text = "${stringResource(R.string.proxy_group_display)}: " +
+                                                stringResource(
+                                                    if (groupTabs) R.string.proxy_group_display_tabs
+                                                    else R.string.proxy_group_display_list,
+                                                ),
+                                            selected = false, enabled = true,
+                                        ) { choiceMenu = 5 })
                                         add(MenuEntry(
                                             text = "${stringResource(R.string.proxy_card_density)}: " +
                                                 stringResource(
@@ -381,7 +385,26 @@ fun ProxyScreen(
                                     alignment = PopupPositionProvider.Align.TopEnd,
                                     onDismissRequest = { choiceMenu = 0 },
                                 ) {
-                                    if (choiceMenu == 3) {
+                                    if (choiceMenu == 5) {
+                                        ListPopupColumn {
+                                            val displayOptions = listOf(
+                                                true to stringResource(R.string.proxy_group_display_tabs),
+                                                false to stringResource(R.string.proxy_group_display_list),
+                                            )
+                                            displayOptions.forEachIndexed { index, option ->
+                                                DropdownImpl(
+                                                    text = option.second,
+                                                    optionSize = displayOptions.size,
+                                                    isSelected = groupTabs == option.first,
+                                                    index = index,
+                                                    onSelectedIndexChange = {
+                                                        viewModel?.updateGroupTabs(option.first)
+                                                        choiceMenu = 0
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    } else if (choiceMenu == 3) {
                                         ListPopupColumn {
                                             CARD_DENSITY_OPTIONS.forEachIndexed { index, option ->
                                                 DropdownImpl(

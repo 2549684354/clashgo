@@ -169,7 +169,7 @@
     <string name="proxy_request_failed">Proxy request failed: %1$s</string>
     <string name="proxy_search_groups">Search groups or nodes</string>
     <string name="proxy_no_matching_groups">No matching groups</string>
-    <string name="proxy_hide_unavailable">Only available nodes</string>
+    <string name="proxy_hide_unavailable">Hide unavailable nodes</string>
     <string name="proxy_start_first">Please start the proxy service first</string>
     <string name="proxy_preview_hint">Proxy is not running — showing the selected subscription\'s nodes</string>
     <string name="proxy_mode_direct_hint">Direct mode is active: all traffic bypasses the proxy. Group selections are saved but only take effect after switching back to rule mode.</string>
@@ -179,7 +179,9 @@
     <string name="proxy_display_single">Single column</string>
     <string name="proxy_display_double">Double column</string>
     <string name="proxy_display_multi">Multi column</string>
-    <string name="proxy_group_tabs">Horizontal group tabs</string>
+    <string name="proxy_group_display">Display</string>
+    <string name="proxy_group_display_tabs">Tabs</string>
+    <string name="proxy_group_display_list">List</string>
     <string name="proxy_card_density">Size</string>
     <string name="proxy_card_density_compact">Compact</string>
     <string name="proxy_card_density_standard">Standard</string>

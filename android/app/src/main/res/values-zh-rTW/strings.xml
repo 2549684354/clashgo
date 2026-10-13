@@ -167,7 +167,7 @@
     <string name="proxy_request_failed">代理請求失敗：%1$s</string>
     <string name="proxy_search_groups">搜尋代理群組或節點</string>
     <string name="proxy_no_matching_groups">沒有符合的代理群組</string>
-    <string name="proxy_hide_unavailable">僅顯示可用節點</string>
+    <string name="proxy_hide_unavailable">隱藏無效節點</string>
     <string name="proxy_start_first">請先啟動代理服務</string>
     <string name="proxy_preview_hint">代理未啟動，目前顯示所選訂閱的節點</string>
     <string name="proxy_mode_direct_hint">目前為直連模式，所有流量皆不經過代理。此處的選擇會被儲存，切回規則模式後生效。</string>
@@ -177,7 +177,9 @@
     <string name="proxy_display_single">單欄</string>
     <string name="proxy_display_double">雙欄</string>
     <string name="proxy_display_multi">多欄</string>
-    <string name="proxy_group_tabs">橫向切換代理群組</string>
+    <string name="proxy_group_display">顯示</string>
+    <string name="proxy_group_display_tabs">標籤頁</string>
+    <string name="proxy_group_display_list">列表</string>
     <string name="proxy_card_density">節點卡片尺寸</string>
     <string name="proxy_card_density_compact">緊湊</string>
     <string name="proxy_card_density_standard">標準</string>
