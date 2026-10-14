@@ -1,6 +1,6 @@
 [submodule "mihomo"]
 	path = third_party/mihomo
-	url = https://github.com/2549684354/mihomo.git
+	url = https://github.com/ChenL-eon/mihomo.git
 	branch = master
 [submodule "scripta"]
 	path = third_party/scripta
