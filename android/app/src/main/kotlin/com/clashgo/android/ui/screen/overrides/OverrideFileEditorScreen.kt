@@ -22,6 +22,7 @@ import com.clashgo.android.domain.model.OverrideFormat
 import com.clashgo.android.platform.showToast
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.theme.LocalAppDarkMode
 import com.clashgo.android.ui.theme.StatusColors
@@ -116,7 +117,8 @@ fun OverrideFileEditorScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
+                        .padding(bottom = 12.dp)
+                        .cardShadow(16.dp),
                 ) {
                     Text(
                         text = uiState.error,

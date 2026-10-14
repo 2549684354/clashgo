@@ -57,6 +57,7 @@ import com.clashgo.android.ui.component.SearchResultStatusEffect
 import com.clashgo.android.ui.component.SearchStatus
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.component.rememberSearchBarTopPadding
 import com.clashgo.android.ui.component.rememberSearchScreenStatus
 import com.clashgo.android.ui.icon.AppIcons
@@ -235,7 +236,8 @@ fun RuleOverrideScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
-                                .padding(bottom = 12.dp),
+                                .padding(bottom = 12.dp)
+                                .cardShadow(16.dp),
                             insideMargin = PaddingValues(16.dp),
                         ) {
                             Text(text = state.error, color = StatusColors.danger)

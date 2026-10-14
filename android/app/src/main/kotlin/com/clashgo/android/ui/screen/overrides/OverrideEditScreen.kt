@@ -31,6 +31,7 @@ import com.clashgo.android.ui.component.CardItem
 import com.clashgo.android.ui.component.UpdateProxyModePreference
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.component.groupedCardItems
 import com.clashgo.android.ui.theme.StatusColors
 import com.clashgo.android.ui.util.TestTags
@@ -220,7 +221,8 @@ fun OverrideEditScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp)
-                            .padding(bottom = 6.dp),
+                            .padding(bottom = 6.dp)
+                            .cardShadow(16.dp),
                         insideMargin = PaddingValues(16.dp),
                     ) {
                         Text(text = error, color = StatusColors.danger)

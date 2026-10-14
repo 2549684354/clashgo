@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
@@ -35,6 +37,14 @@ fun CardSegment(
     insidePadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // 分组卡的「卡片阴影」按段施加：每段带自己那截圆角的 2dp 投影。段与段上下紧贴，
+    // 后绘制的段会盖住上一段的接缝阴影，整组视觉上合成一块连续的卡片阴影。
+    val shadowShape = RoundedCornerShape(
+        topStart = topCornerRadius,
+        topEnd = topCornerRadius,
+        bottomEnd = bottomCornerRadius,
+        bottomStart = bottomCornerRadius,
+    )
     val background = if (topCornerRadius == 0.dp && bottomCornerRadius == 0.dp) {
         Modifier.background(color)
     } else {
@@ -50,6 +60,7 @@ fun CardSegment(
                     top = outerTopPadding,
                     bottom = outerBottomPadding,
                 )
+                .shadow(elevation = 2.dp, shape = shadowShape)
                 .then(background)
                 .padding(insidePadding),
             content = content,

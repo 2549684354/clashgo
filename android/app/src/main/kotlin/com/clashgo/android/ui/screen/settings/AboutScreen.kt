@@ -51,6 +51,7 @@ import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.ColorBlendToken
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
 import com.clashgo.android.ui.component.blur.rememberBlurEnabled
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.component.effect.BgEffectBackground
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.theme.LocalAppDarkMode
@@ -299,6 +300,7 @@ private fun AboutContent(
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp)
                             .padding(bottom = 12.dp)
+                            .cardShadow(16.dp)
                             .then(
                                 if (blurEnabled) {
                                     Modifier.textureBlur(

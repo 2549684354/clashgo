@@ -41,6 +41,7 @@ import com.clashgo.android.ui.component.AdaptiveTopAppBar
 import com.clashgo.android.ui.component.CardItem
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.component.groupedCardItems
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.util.horizontalCutoutPadding
@@ -123,7 +124,8 @@ fun DataManagementScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
+                        .padding(bottom = 12.dp)
+                        .cardShadow(16.dp),
                     insideMargin = PaddingValues(16.dp),
                 ) {
                     Row(

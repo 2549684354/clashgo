@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clashgo.android.R
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.theme.RunState
 import com.clashgo.android.ui.theme.StatusColors

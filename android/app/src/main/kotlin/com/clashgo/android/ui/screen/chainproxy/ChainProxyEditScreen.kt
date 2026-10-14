@@ -36,6 +36,7 @@ import com.clashgo.android.ui.component.AdaptiveTopAppBar
 import com.clashgo.android.ui.component.CardItem
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.component.groupedCardItems
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.screen.overrides.BackButton
@@ -275,6 +276,7 @@ private fun HopItem(
         modifier = modifier
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp)
+            .cardShadow(16.dp)
             .testTag(TestTags.ChainProxy.hop(index)),
     ) {
         BasicComponent(

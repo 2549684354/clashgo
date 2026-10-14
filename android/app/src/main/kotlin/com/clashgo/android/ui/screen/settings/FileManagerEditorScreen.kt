@@ -28,6 +28,7 @@ import com.clashgo.android.platform.ProfileFileManager
 import com.clashgo.android.platform.showToast
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.theme.LocalAppDarkMode
 import com.clashgo.android.ui.util.horizontalCutoutPadding
@@ -160,7 +161,8 @@ fun FileManagerEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 12.dp)
+                    .cardShadow(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.file_manager_edit_warning),

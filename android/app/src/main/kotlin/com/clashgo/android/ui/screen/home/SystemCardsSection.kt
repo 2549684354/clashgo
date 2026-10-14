@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.clashgo.android.R
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.theme.StatusColors
 import com.clashgo.android.ui.util.sheetContentSafePadding

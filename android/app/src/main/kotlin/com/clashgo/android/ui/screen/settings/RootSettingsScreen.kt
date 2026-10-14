@@ -36,6 +36,7 @@ import com.clashgo.android.ui.component.RestartRequiredHint
 import com.clashgo.android.ui.component.TetherInterfaceEditDialog
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.component.groupedCardItems
 import com.clashgo.android.ui.component.tetherInterfaceSummary
 import com.clashgo.android.ui.icon.AppIcons
@@ -188,7 +189,8 @@ fun RootSettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp)
-                            .padding(bottom = 12.dp),
+                            .padding(bottom = 12.dp)
+                            .cardShadow(16.dp),
                         colors = CardDefaults.defaultColors(
                             color = MiuixTheme.colorScheme.errorContainer,
                             contentColor = MiuixTheme.colorScheme.onErrorContainer,

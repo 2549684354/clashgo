@@ -55,6 +55,7 @@ import com.clashgo.android.ui.component.AdaptiveTopAppBar
 import com.clashgo.android.ui.component.ListPopupDefaults.MenuPositionProvider
 import com.clashgo.android.ui.component.blur.BlurredBar
 import com.clashgo.android.ui.component.blur.rememberBlurBackdrop
+import com.clashgo.android.ui.component.cardShadow
 import com.clashgo.android.ui.icon.AppIcons
 import com.clashgo.android.ui.theme.StatusColors
 import com.clashgo.android.ui.util.TestTags
@@ -381,7 +382,8 @@ private fun LogCard(entry: LogEntry, isCore: Boolean) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 12.dp)
+            .cardShadow(16.dp),
         insideMargin = PaddingValues(12.dp),
     ) {
         Column(

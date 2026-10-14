@@ -20,7 +20,8 @@ fun RestartRequiredHint(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
-            .padding(top = 12.dp, bottom = 6.dp),
+            .padding(top = 12.dp, bottom = 6.dp)
+            .cardShadow(16.dp),
     ) {
         Text(
             text = stringResource(R.string.settings_override_restart_hint),
